@@ -29,12 +29,14 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
+// Glaven ekran: lista od kompanii preku GET /companies (Retrofit); podatocite vo MySQL preku backend.
 public class MainActivity extends AppCompatActivity {
 
     private CompanyAdapter adapter;
     private TextView emptyView;
     private RecyclerView recyclerView;
 
+    // Koga od "Nova kompanija" ke se vrati RESULT_OK, povtorno ja vchituva listata od server.
     private final ActivityResultLauncher<Intent> addCompanyLauncher =
             registerForActivityResult(
                     new ActivityResultContracts.StartActivityForResult(),
@@ -68,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
         loadCompanies();
     }
 
+    // Async povik kon Node API; na uspeh ja puni RecyclerView, na greshka Toast + prazna lista.
     private void loadCompanies() {
         MestoApi api = ApiClient.getApi();
         api.listCompanies()

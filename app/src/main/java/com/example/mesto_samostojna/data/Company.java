@@ -2,9 +2,7 @@ package com.example.mesto_samostojna.data;
 
 import androidx.annotation.Nullable;
 
-/**
- * Одговара на JSON од API / компании во MySQL.
- */
+/** Model za edna kompanija — poleinjata se mapiraat vo JSON od API (POST/GET companies). */
 public class Company {
 
     @Nullable

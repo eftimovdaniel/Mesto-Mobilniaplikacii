@@ -14,6 +14,7 @@ import com.example.mesto_samostojna.data.Company;
 import java.util.ArrayList;
 import java.util.List;
 
+// Lista karticki za RecyclerView na glavniot ekran.
 public class CompanyAdapter extends RecyclerView.Adapter<CompanyAdapter.VH> {
 
     private final List<Company> items = new ArrayList<>();

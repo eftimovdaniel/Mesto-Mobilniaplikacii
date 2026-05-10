@@ -8,12 +8,14 @@ import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
+// Singleton za Retrofit: base URL e BuildConfig.API_BASE_URL (na emulator 10.0.2.2 = localhost na kompjuterot).
 public final class ApiClient {
 
     private static volatile MestoApi api;
 
     private ApiClient() {}
 
+    /** Lazy init na MestoApi; bezbedno za povik od poveke niski. */
     public static MestoApi getApi() {
         if (api == null) {
             synchronized (ApiClient.class) {

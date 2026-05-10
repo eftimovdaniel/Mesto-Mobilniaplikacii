@@ -10,11 +10,11 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 /**
- * Почетен екран (стил сличен на референца „alo“) со бренд mesto.
- * По кратка пауза или допир преминува на {@link MainActivity}.
+ * Poceten ekran (brend mesto). Po ~2.4s ili dopir premina kon {@link MainActivity}.
  */
 public class SplashActivity extends AppCompatActivity {
 
+    // Avtomatski premin kon glavniot ekran ako korisnikot ne dopre porano.
     private static final long AUTO_NAVIGATE_MS = 2400L;
 
     private final Handler handler = new Handler(Looper.getMainLooper());

@@ -1,6 +1,6 @@
 /**
- * Мини REST API: Express + mysql2
- * Пушти: npm install && npm start (ја чита .env)
+ * Mini REST API: Express + mysql2.
+ * Start: npm install && npm start (chita .env od backend direktorium).
  */
 require("dotenv").config();
 const express = require("express");
@@ -9,6 +9,7 @@ const mysql = require("mysql2/promise");
 
 const PORT = Number(process.env.PORT || 3000);
 
+// Pool kon bazata "mesto"; parametrite od .env (DB_HOST, DB_USER, ...).
 const pool = mysql.createPool({
   host: process.env.DB_HOST || "127.0.0.1",
   port: Number(process.env.DB_PORT || 3306),
@@ -19,13 +20,14 @@ const pool = mysql.createPool({
   connectionLimit: 10,
 });
 
+// Pri start proba SELECT 1 — ako padne, Android ke dobiva database_error pri CRUD.
 (async () => {
   try {
     await pool.query("SELECT 1");
-    console.log("MySQL: поврзано со базата „" + (process.env.DB_NAME || "mesto") + "“.");
+    console.log("MySQL: povrzano so bazata \"" + (process.env.DB_NAME || "mesto") + "\".");
   } catch (e) {
     console.error(
-      "MySQL: НЕМА врска. Пушти го MySQL, провери .env (DB_USER/DB_PASSWORD) и дека постои базата (schema.sql).\n",
+      "MySQL: NEMA vrska. Pusti MySQL, proveri .env (DB_USER/DB_PASSWORD) i deka postoi bazata (schema.sql).\n",
       e.message
     );
   }
@@ -35,10 +37,12 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Brza proverka dali procesot zboruva (bez MySQL).
 app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
+// Lista kompanii za mobilnata aplikacija (RecyclerView).
 app.get("/companies", async (_req, res) => {
   try {
     const [rows] = await pool.query(
@@ -62,6 +66,7 @@ app.get("/companies", async (_req, res) => {
   }
 });
 
+// Nova kompanija od forma vo aplikacija; site poleinja se zadolzitelni.
 app.post("/companies", async (req, res) => {
   const b = req.body || {};
   const required = [
@@ -119,5 +124,5 @@ app.post("/companies", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`mesto API на http://localhost:${PORT}`);
+  console.log(`mesto API na http://localhost:${PORT}`);
 });

@@ -9,6 +9,7 @@ import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 
+// REST povici kon istiot Node server sto zboruva so MySQL (backend/server.js).
 public interface MestoApi {
 
     @GET("companies")

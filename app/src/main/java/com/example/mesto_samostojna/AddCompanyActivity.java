@@ -36,11 +36,12 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
- * Форма „Нова компанија“. По успешен POST кон API (Retrofit), повикај
- * {@link #setResult(int)} и {@link #finish()} за да се освежи листата.
+ * Forma "Nova kompanija": validacija, opcionalno geokodiranje od adresa, POST kon API.
+ * Po uspen odgovor: {@link #setResult(int)} i {@link #finish()} za da se osvezi listata vo MainActivity.
  */
 public class AddCompanyActivity extends AppCompatActivity {
 
+    // Geocoder ne smee na glavnata niska — raboti ovde so Executor.
     private final ExecutorService geocodeExecutor = Executors.newSingleThreadExecutor();
 
     private MaterialButton btnSave;
@@ -83,6 +84,7 @@ public class AddCompanyActivity extends AppCompatActivity {
         ImageButton btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
 
+        // Koga lat/lng menuvaat, osvezuva tekstot pod "Lokacija".
         TextWatcher locationWatcher = new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -114,7 +116,7 @@ public class AddCompanyActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-    /** Геокодирање од адреса (Geocoder мора да се повика надвор од главната нишка). */
+    /** Od tekst na adresa gi popolnuva lat/lng (ako Geocoder vrati rezultat). */
     private void geocodeFromAddress() {
         tilAddress.setError(null);
         String raw = textOf(inputAddress).trim();
@@ -127,6 +129,7 @@ public class AddCompanyActivity extends AppCompatActivity {
             return;
         }
 
+        // Bez zemja vo tekstot dodava kontekst za podobra tocnost na geocoder.
         final String query =
                 raw.toLowerCase(Locale.ROOT).contains("македони")
                         || raw.toLowerCase(Locale.ROOT).contains("macedon")
@@ -187,6 +190,7 @@ public class AddCompanyActivity extends AppCompatActivity {
         return geocoder.getFromLocationName(query, 5);
     }
 
+    /** Pokazuva lat/lng so N/S/E/W pod poleinjata (ako koordinatite se validni). */
     private void updateLocationPreview() {
         String latStr = textOf(inputLatitude);
         String lngStr = textOf(inputLongitude);
@@ -229,6 +233,7 @@ public class AddCompanyActivity extends AppCompatActivity {
         return e != null ? e.toString() : "";
     }
 
+    /** Forma validacija + POST /companies; pri uspeh RESULT_OK i finish(). */
     private void attemptSave() {
         clearErrors();
 
