@@ -1,4 +1,4 @@
--- Изврши во MySQL (на пр. mysql -u root -p < schema.sql)
+-- Izvrshi vo MySQL (na pr. mysql -u root -p < schema.sql)
 CREATE DATABASE IF NOT EXISTS mesto CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE mesto;
 
@@ -11,6 +11,6 @@ CREATE TABLE IF NOT EXISTS companies (
     email VARCHAR(255) NOT NULL,
     phone VARCHAR(64) NOT NULL,
     website VARCHAR(512) NOT NULL,
-    category VARCHAR(64) NOT NULL,
+    categories JSON NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

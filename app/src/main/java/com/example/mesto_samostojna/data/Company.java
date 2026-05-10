@@ -2,6 +2,9 @@ package com.example.mesto_samostojna.data;
 
 import androidx.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /** Model za edna kompanija — poleinjata se mapiraat vo JSON od API (POST/GET companies). */
 public class Company {
 
@@ -14,7 +17,7 @@ public class Company {
     private String email;
     private String phone;
     private String website;
-    private String category;
+    private List<String> categories = new ArrayList<>();
 
     @Nullable
     public Integer getId() {
@@ -49,8 +52,13 @@ public class Company {
         return website;
     }
 
-    public String getCategory() {
-        return category;
+    public List<String> getCategories() {
+        return categories;
+    }
+
+    /** Dali kompanijata e vo dadena kategorija (slug: service, entertainment, industry, education). */
+    public boolean hasCategory(String slug) {
+        return categories != null && slug != null && categories.contains(slug);
     }
 
     public void setId(@Nullable Integer id) {
@@ -85,7 +93,7 @@ public class Company {
         this.website = website;
     }
 
-    public void setCategory(String category) {
-        this.category = category;
+    public void setCategories(List<String> categories) {
+        this.categories = categories != null ? categories : new ArrayList<>();
     }
 }

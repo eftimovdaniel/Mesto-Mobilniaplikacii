@@ -20,6 +20,33 @@ const pool = mysql.createPool({
   connectionLimit: 10,
 });
 
+function normalizeCategories(row) {
+  const raw = row.categories;
+  if (raw == null) {
+    return [];
+  }
+  if (Array.isArray(raw)) {
+    return raw.map(String);
+  }
+  if (typeof raw === "string") {
+    try {
+      const v = JSON.parse(raw);
+      return Array.isArray(v) ? v.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+  if (Buffer.isBuffer(raw)) {
+    try {
+      const v = JSON.parse(raw.toString("utf8"));
+      return Array.isArray(v) ? v.map(String) : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
 // Pri start proba SELECT 1 — ako padne, Android ke dobiva database_error pri CRUD.
 (async () => {
   try {
@@ -42,12 +69,34 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
-// Lista kompanii za mobilnata aplikacija (RecyclerView).
-app.get("/companies", async (_req, res) => {
+// Lista kompanii za mobilnata aplikacija (filtri opcionalno po kategorija i imе).
+app.get("/companies", async (req, res) => {
   try {
-    const [rows] = await pool.query(
-      "SELECT id, name, address, latitude, longitude, email, phone, website, category FROM companies ORDER BY id DESC"
-    );
+    const category = req.query.category;
+    const q = req.query.q;
+
+    let sql =
+      "SELECT id, name, address, latitude, longitude, email, phone, website, categories FROM companies ORDER BY id DESC";
+    const params = [];
+
+    if (category && q) {
+      sql =
+        "SELECT id, name, address, latitude, longitude, email, phone, website, categories FROM companies " +
+        "WHERE JSON_CONTAINS(categories, ?, '$') AND name LIKE ? ORDER BY id DESC";
+      params.push(JSON.stringify(category), "%" + String(q) + "%");
+    } else if (category) {
+      sql =
+        "SELECT id, name, address, latitude, longitude, email, phone, website, categories FROM companies " +
+        "WHERE JSON_CONTAINS(categories, ?, '$') ORDER BY id DESC";
+      params.push(JSON.stringify(category));
+    } else if (q) {
+      sql =
+        "SELECT id, name, address, latitude, longitude, email, phone, website, categories FROM companies " +
+        "WHERE name LIKE ? ORDER BY id DESC";
+      params.push("%" + String(q) + "%");
+    }
+
+    const [rows] = await pool.query(sql, params);
     const out = rows.map((r) => ({
       id: Number(r.id),
       name: r.name,
@@ -57,7 +106,7 @@ app.get("/companies", async (_req, res) => {
       email: r.email,
       phone: r.phone,
       website: r.website,
-      category: r.category,
+      categories: normalizeCategories(r),
     }));
     res.json(out);
   } catch (e) {
@@ -66,7 +115,7 @@ app.get("/companies", async (_req, res) => {
   }
 });
 
-// Nova kompanija od forma vo aplikacija; site poleinja se zadolzitelni.
+// Nova kompanija od forma vo aplikacija; poleinjata site zadolzitelni + barem edna kategorija.
 app.post("/companies", async (req, res) => {
   const b = req.body || {};
   const required = [
@@ -77,7 +126,6 @@ app.post("/companies", async (req, res) => {
     "email",
     "phone",
     "website",
-    "category",
   ];
   for (const k of required) {
     if (b[k] === undefined || b[k] === null || b[k] === "") {
@@ -85,10 +133,16 @@ app.post("/companies", async (req, res) => {
     }
   }
 
+  const cats = b.categories;
+  if (!Array.isArray(cats) || cats.length === 0) {
+    return res.status(400).json({ error: "missing_categories" });
+  }
+  const categoriesJson = JSON.stringify(cats.map(String));
+
   try {
     const [result] = await pool.execute(
-      `INSERT INTO companies (name, address, latitude, longitude, email, phone, website, category)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO companies (name, address, latitude, longitude, email, phone, website, categories)
+       VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON))`,
       [
         String(b.name),
         String(b.address),
@@ -97,12 +151,12 @@ app.post("/companies", async (req, res) => {
         String(b.email),
         String(b.phone),
         String(b.website),
-        String(b.category),
+        categoriesJson,
       ]
     );
     const id = result.insertId;
     const [rows] = await pool.query(
-      "SELECT id, name, address, latitude, longitude, email, phone, website, category FROM companies WHERE id = ?",
+      "SELECT id, name, address, latitude, longitude, email, phone, website, categories FROM companies WHERE id = ?",
       [id]
     );
     const row = rows[0];
@@ -115,7 +169,7 @@ app.post("/companies", async (req, res) => {
       email: row.email,
       phone: row.phone,
       website: row.website,
-      category: row.category,
+      categories: normalizeCategories(row),
     });
   } catch (e) {
     console.error(e);

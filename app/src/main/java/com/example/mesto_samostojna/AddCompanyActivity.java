@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.location.Address;
 import android.location.Geocoder;
 import android.os.Bundle;
-import android.view.View;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
@@ -17,11 +16,12 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
@@ -60,7 +60,10 @@ public class AddCompanyActivity extends AppCompatActivity {
     private TextInputEditText inputLatitude;
     private TextInputEditText inputLongitude;
     private TextView textLocationCoords;
-    private ChipGroup chipGroupCategory;
+    private MaterialCheckBox cbCatService;
+    private MaterialCheckBox cbCatEntertainment;
+    private MaterialCheckBox cbCatIndustry;
+    private MaterialCheckBox cbCatEducation;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -79,7 +82,10 @@ public class AddCompanyActivity extends AppCompatActivity {
         inputLatitude = findViewById(R.id.input_latitude);
         inputLongitude = findViewById(R.id.input_longitude);
         textLocationCoords = findViewById(R.id.text_location_coords);
-        chipGroupCategory = findViewById(R.id.chip_group_category);
+        cbCatService = findViewById(R.id.cb_cat_service);
+        cbCatEntertainment = findViewById(R.id.cb_cat_entertainment);
+        cbCatIndustry = findViewById(R.id.cb_cat_industry);
+        cbCatEducation = findViewById(R.id.cb_cat_education);
 
         ImageButton btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
@@ -273,17 +279,15 @@ public class AddCompanyActivity extends AppCompatActivity {
             ok = false;
         }
 
-        int checked = chipGroupCategory.getCheckedChipId();
-        if (checked == View.NO_ID) {
+        List<String> categorySlugs = collectCategorySlugs();
+        if (categorySlugs.isEmpty()) {
             ok = false;
-            Toast.makeText(this, R.string.label_category, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_categories_min_one, Toast.LENGTH_SHORT).show();
         }
 
         if (!ok) {
             return;
         }
-
-        String categorySlug = categorySlugForChip(checked);
 
         Double lat = parseCoord(textOf(inputLatitude));
         Double lng = parseCoord(textOf(inputLongitude));
@@ -299,7 +303,7 @@ public class AddCompanyActivity extends AppCompatActivity {
         company.setEmail(email.trim());
         company.setPhone(phone.trim());
         company.setWebsite(website.trim());
-        company.setCategory(categorySlug);
+        company.setCategories(categorySlugs);
 
         btnSave.setEnabled(false);
         MestoApi api = ApiClient.getApi();
@@ -346,19 +350,20 @@ public class AddCompanyActivity extends AppCompatActivity {
     }
 
     @NonNull
-    private String categorySlugForChip(int chipId) {
-        if (chipId == R.id.chip_service) {
-            return "service";
+    private List<String> collectCategorySlugs() {
+        List<String> out = new ArrayList<>();
+        if (cbCatService.isChecked()) {
+            out.add("service");
         }
-        if (chipId == R.id.chip_entertainment) {
-            return "entertainment";
+        if (cbCatEntertainment.isChecked()) {
+            out.add("entertainment");
         }
-        if (chipId == R.id.chip_industry) {
-            return "industry";
+        if (cbCatIndustry.isChecked()) {
+            out.add("industry");
         }
-        if (chipId == R.id.chip_education) {
-            return "education";
+        if (cbCatEducation.isChecked()) {
+            out.add("education");
         }
-        return "unknown";
+        return out;
     }
 }

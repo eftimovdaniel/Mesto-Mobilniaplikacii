@@ -272,66 +272,40 @@
                 android:textColor="@color/ink"
                 android:textSize="11sp" />
 
-            <HorizontalScrollView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:scrollbars="none">
+                android:orientation="vertical">
 
-                <com.google.android.material.chip.ChipGroup
-                    android:id="@+id/chip_group_category"
-                    android:layout_width="wrap_content"
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/cb_cat_service"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:checkedChip="@id/chip_service"
-                    app:selectionRequired="true"
-                    app:singleLine="true"
-                    app:singleSelection="true">
+                    android:text="@string/cat_service"
+                    android:textColor="@color/ink" />
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chip_service"
-                        style="@style/Widget.Material3.Chip.Filter"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/cat_service"
-                        android:textColor="@color/chip_text_selector"
-                        app:chipBackgroundColor="@color/chip_background_selector"
-                        app:chipCornerRadius="24dp"
-                        app:checkedIconVisible="false" />
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/cb_cat_entertainment"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/cat_entertainment"
+                    android:textColor="@color/ink" />
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chip_entertainment"
-                        style="@style/Widget.Material3.Chip.Filter"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/cat_entertainment"
-                        android:textColor="@color/chip_text_selector"
-                        app:chipBackgroundColor="@color/chip_background_selector"
-                        app:chipCornerRadius="24dp"
-                        app:checkedIconVisible="false" />
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/cb_cat_industry"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/cat_industry"
+                    android:textColor="@color/ink" />
 
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chip_industry"
-                        style="@style/Widget.Material3.Chip.Filter"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/cat_industry"
-                        android:textColor="@color/chip_text_selector"
-                        app:chipBackgroundColor="@color/chip_background_selector"
-                        app:chipCornerRadius="24dp"
-                        app:checkedIconVisible="false" />
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chip_education"
-                        style="@style/Widget.Material3.Chip.Filter"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/cat_education"
-                        android:textColor="@color/chip_text_selector"
-                        app:chipBackgroundColor="@color/chip_background_selector"
-                        app:chipCornerRadius="24dp"
-                        app:checkedIconVisible="false" />
-                </com.google.android.material.chip.ChipGroup>
-            </HorizontalScrollView>
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/cb_cat_education"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/cat_education"
+                    android:textColor="@color/ink" />
+            </LinearLayout>
 
             <Space
                 android:layout_width="match_parent"
