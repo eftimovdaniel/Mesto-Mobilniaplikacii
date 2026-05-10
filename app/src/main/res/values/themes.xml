@@ -1,0 +1,13 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.Mesto_samostojna" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="android:statusBarColor">@color/cream</item>
+        <item name="android:navigationBarColor">@color/cream</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="colorPrimary">@color/ink</item>
+        <item name="colorSurface">@color/cream</item>
+        <item name="android:colorBackground">@color/cream</item>
+    </style>
+
+    <style name="Theme.Mesto_samostojna" parent="Base.Theme.Mesto_samostojna" />
+</resources>

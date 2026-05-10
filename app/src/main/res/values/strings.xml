@@ -1,0 +1,48 @@
+<resources>
+    <string name="app_name">mesto</string>
+
+    <string name="screen_new_company_title_small">нова</string>
+    <string name="screen_new_company_title_large">компанија</string>
+    <string name="label_name">НАЗИВ</string>
+    <string name="label_address">АДРЕСА</string>
+    <string name="label_latitude">LATITUDE</string>
+    <string name="label_longitude">LONGITUDE</string>
+    <string name="label_email">EMAIL</string>
+    <string name="label_phone">ТЕЛЕФОН</string>
+    <string name="label_website">ВЕБ СТРАНА</string>
+    <string name="label_category">КАТЕГОРИЈА</string>
+    <string name="label_location">ЛОКАЦИЈА</string>
+    <string name="btn_save">ЗАЧУВАЈ</string>
+    <string name="hint_search_business">Пребарај бизнис…</string>
+
+    <string name="cat_service">сервис</string>
+    <string name="cat_entertainment">забава</string>
+    <string name="cat_industry">индустрија</string>
+    <string name="cat_education">едукација</string>
+
+    <string name="nav_back">Назад</string>
+    <string name="open_add_company">Нова компанија</string>
+    <string name="location_placeholder">41.7452° N - 22.1939° E</string>
+    <string name="error_required">Задолжително поле</string>
+
+    <string name="splash_rewards">локално</string>
+    <string name="splash_tap_hint">допри или почекај…</string>
+    <string name="splash_cd_search">Пребарај</string>
+    <string name="splash_nav_home">почетна</string>
+    <string name="splash_nav_shop">откриј</string>
+    <string name="splash_nav_bag">додај</string>
+    <string name="splash_nav_wish">омилено</string>
+    <string name="splash_nav_account">профил</string>
+
+    <string name="main_headline">локални бизниси</string>
+    <string name="main_tagline">Додај компанија, пребарувај и откриј го твоето место.</string>
+
+    <string name="list_empty">Нема записи. Додај компанија подолу.</string>
+    <string name="error_network">Нема врска со серверот. Провери дали API работи и интернет.</string>
+    <string name="error_save_server">Серверот не го зачува записот.</string>
+
+    <string name="btn_find_location">Најди локација од адреса</string>
+    <string name="geocoder_ok">Координатите се пополнети.</string>
+    <string name="geocoder_failed">Не се најде локација за оваа адреса. Провери го текстот или внеси lat/lng рачно.</string>
+    <string name="geocoder_missing">Овој уред нема Geocoder (услуга за адреси).</string>
+</resources>

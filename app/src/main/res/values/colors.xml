@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- „mesto“ палета – земјени, смирени тонови -->
+    <color name="ink">#1A1A1A</color>
+    <color name="clay">#B87D6B</color>
+    <color name="sand">#D9CFC4</color>
+    <color name="linen">#EFEBE6</color>
+    <color name="cream">#FAF8F5</color>
+</resources>
