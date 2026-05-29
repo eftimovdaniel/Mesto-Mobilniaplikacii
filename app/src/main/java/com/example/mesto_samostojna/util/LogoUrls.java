@@ -10,12 +10,11 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Гради листа URL-ови за логото на компанијата (по приоритет: clearbit → google s2 → DuckDuckGo).
+ * Гради листа URL-ови за логото (Google S2 → DuckDuckGo).
  * Glide ги пробува по ред преку .error() chain.
  */
 public final class LogoUrls {
 
-    private static final String CLEARBIT = "https://logo.clearbit.com/%s?size=256";
     private static final String GOOGLE_S2 = "https://www.google.com/s2/favicons?domain=%s&sz=128";
     private static final String DUCKDUCKGO = "https://icons.duckduckgo.com/ip3/%s.ico";
 
@@ -65,7 +64,6 @@ public final class LogoUrls {
         if (domain == null) {
             return out;
         }
-        out.add(String.format(Locale.US, CLEARBIT, domain));
         out.add(String.format(Locale.US, GOOGLE_S2, domain));
         out.add(String.format(Locale.US, DUCKDUCKGO, domain));
         return out;

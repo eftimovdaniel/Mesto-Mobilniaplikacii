@@ -22,3 +22,4 @@ create policy "read_all_companies"
 create policy "insert_all_companies"
   on public.companies for insert
   with check (true);
+Not Found

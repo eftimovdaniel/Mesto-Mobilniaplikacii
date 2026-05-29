@@ -39,11 +39,13 @@
             android:paddingTop="8dp">
 
             <com.google.android.material.card.MaterialCardView
-                android:layout_width="96dp"
-                android:layout_height="96dp"
+                android:layout_width="112dp"
+                android:layout_height="112dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
                 android:layout_marginBottom="14dp"
                 app:cardBackgroundColor="@color/linen"
-                app:cardCornerRadius="20dp"
+                app:cardCornerRadius="56dp"
                 app:cardElevation="0dp"
                 app:strokeColor="@color/sand"
                 app:strokeWidth="1dp">
@@ -53,7 +55,6 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:contentDescription="@string/label_name"
-                    android:padding="6dp"
                     android:scaleType="centerCrop"
                     android:src="@drawable/ic_company_placeholder" />
             </com.google.android.material.card.MaterialCardView>
@@ -63,6 +64,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:fontFamily="serif"
+                android:gravity="center_horizontal"
                 android:textColor="@color/ink"
                 android:textSize="30sp"
                 android:textStyle="bold"
@@ -70,8 +72,9 @@
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/detail_categories"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
                 android:layout_marginTop="10dp"
                 app:chipSpacingHorizontal="6dp" />
 

@@ -8,6 +8,9 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -27,6 +30,7 @@ import com.example.mesto_samostojna.api.MestoApi;
 import com.example.mesto_samostojna.data.Company;
 import com.example.mesto_samostojna.geofence.GeofenceManager;
 import com.example.mesto_samostojna.geofence.ProximityNotifier;
+import com.example.mesto_samostojna.ui.CompanyRowAdapter;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
@@ -62,6 +66,11 @@ public class MainActivity extends AppCompatActivity {
 
     private TextInputEditText inputSearch;
     private MaterialToolbar toolbar;
+    private TabLayout tabs;
+    private ViewPager2 pager;
+    private ListView searchResultsList;
+    private TextView searchEmptyView;
+    private CompanyRowAdapter searchAdapter;
 
     private final ActivityResultLauncher<String[]> requestLocationLauncher =
             registerForActivityResult(
@@ -116,11 +125,23 @@ public class MainActivity extends AppCompatActivity {
         toolbar.inflateMenu(R.menu.menu_main);
         toolbar.setOnMenuItemClickListener(this::onToolbarMenuItemClick);
 
-        TabLayout tabs = findViewById(R.id.tabs);
-        ViewPager2 pager = findViewById(R.id.view_pager);
+        tabs = findViewById(R.id.tabs);
+        pager = findViewById(R.id.view_pager);
         pager.setAdapter(new CompanyPagerAdapter(this));
         new TabLayoutMediator(tabs, pager, (tab, position) -> tab.setText(TAB_LABELS[position]))
                 .attach();
+
+        searchResultsList = findViewById(R.id.list_search_results);
+        searchEmptyView = findViewById(R.id.empty_search_results);
+        searchAdapter = new CompanyRowAdapter(this);
+        searchResultsList.setAdapter(searchAdapter);
+        searchResultsList.setOnItemClickListener(
+                (parent, view, position, id) -> {
+                    Company c = searchAdapter.getItem(position);
+                    Intent intent = new Intent(this, CompanyDetailActivity.class);
+                    intent.putExtra(CompanyDetailActivity.EXTRA_COMPANY, c);
+                    startActivity(intent);
+                });
 
         inputSearch = findViewById(R.id.input_search);
         inputSearch.addTextChangedListener(
@@ -134,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void afterTextChanged(Editable s) {
                         searchQuery = s != null ? s.toString() : "";
-                        notifyCompanyFragments();
+                        refreshSearchMode();
                     }
                 });
 
@@ -204,16 +225,10 @@ public class MainActivity extends AppCompatActivity {
 
     public List<Company> getCompaniesForCategory(String slug) {
         List<Company> out = new ArrayList<>();
-        String q = searchQuery.trim().toLowerCase(Locale.getDefault());
         for (Company c : companies) {
-            if (!c.hasCategory(slug)) {
-                continue;
+            if (c.hasCategory(slug)) {
+                out.add(c);
             }
-            if (!q.isEmpty()
-                    && !c.getName().toLowerCase(Locale.getDefault()).contains(q)) {
-                continue;
-            }
-            out.add(c);
         }
         return out;
     }
@@ -224,6 +239,44 @@ public class MainActivity extends AppCompatActivity {
                 ((CompanyListFragment) f).onCompaniesUpdated();
             }
         }
+    }
+
+    private void refreshSearchMode() {
+        String q = searchQuery.trim().toLowerCase(Locale.getDefault());
+        boolean searching = !q.isEmpty();
+
+        tabs.setVisibility(searching ? View.GONE : View.VISIBLE);
+        pager.setVisibility(searching ? View.GONE : View.VISIBLE);
+
+        if (!searching) {
+            searchResultsList.setVisibility(View.GONE);
+            searchEmptyView.setVisibility(View.GONE);
+            notifyCompanyFragments();
+            return;
+        }
+
+        List<Company> matches = new ArrayList<>();
+        for (Company c : companies) {
+            if (matchesQuery(c, q)) {
+                matches.add(c);
+            }
+        }
+        searchAdapter.setItems(matches);
+        boolean any = !matches.isEmpty();
+        searchResultsList.setVisibility(any ? View.VISIBLE : View.GONE);
+        searchEmptyView.setVisibility(any ? View.GONE : View.VISIBLE);
+    }
+
+    private static boolean matchesQuery(Company c, String q) {
+        return containsCi(c.getName(), q)
+                || containsCi(c.getAddress(), q)
+                || containsCi(c.getPhone(), q)
+                || containsCi(c.getEmail(), q)
+                || containsCi(c.getWebsite(), q);
+    }
+
+    private static boolean containsCi(String value, String q) {
+        return value != null && value.toLowerCase(Locale.getDefault()).contains(q);
     }
 
     private void loadCompanies() {
@@ -248,6 +301,7 @@ public class MainActivity extends AppCompatActivity {
                                             .show();
                                 }
                                 notifyCompanyFragments();
+                                refreshSearchMode();
                             }
 
                             @Override
@@ -260,6 +314,7 @@ public class MainActivity extends AppCompatActivity {
                                                 Toast.LENGTH_LONG)
                                         .show();
                                 notifyCompanyFragments();
+                                refreshSearchMode();
                             }
                         });
     }
