@@ -12,13 +12,9 @@ import android.widget.ImageButton;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
-import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import android.widget.RadioGroup;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
@@ -66,29 +62,9 @@ public class AddCompanyActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_add_company);
 
-        View header = findViewById(R.id.add_company_header);
         ScrollView scroll = findViewById(R.id.add_company_scroll);
-        ViewCompat.setOnApplyWindowInsetsListener(
-                findViewById(R.id.add_company_root),
-                (v, insets) -> {
-                    Insets sb = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                    Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
-                    header.setPadding(
-                            header.getPaddingLeft(),
-                            sb.top + 12,
-                            header.getPaddingRight(),
-                            header.getPaddingBottom());
-                    int bottomPad = Math.max(sb.bottom, ime.bottom) + 8;
-                    scroll.setPadding(
-                            scroll.getPaddingLeft(),
-                            scroll.getPaddingTop(),
-                            scroll.getPaddingRight(),
-                            bottomPad);
-                    return insets;
-                });
 
         tilName = findViewById(R.id.til_name);
         tilAddress = findViewById(R.id.til_address);
@@ -98,11 +74,25 @@ public class AddCompanyActivity extends AppCompatActivity {
         tilPhone = findViewById(R.id.til_phone);
         tilWebsite = findViewById(R.id.til_website);
 
+        TextInputEditText inputName = findViewById(R.id.input_name);
         inputAddress = findViewById(R.id.input_address);
         inputLatitude = findViewById(R.id.input_latitude);
         inputLongitude = findViewById(R.id.input_longitude);
+        TextInputEditText inputEmail = findViewById(R.id.input_email);
+        TextInputEditText inputPhone = findViewById(R.id.input_phone);
+        TextInputEditText inputWebsite = findViewById(R.id.input_website);
         textLocationCoords = findViewById(R.id.text_location_coords);
         rgCategories = findViewById(R.id.rg_categories);
+
+        wireScrollOnFocus(
+                scroll,
+                inputName,
+                inputAddress,
+                inputLatitude,
+                inputLongitude,
+                inputEmail,
+                inputPhone,
+                inputWebsite);
 
         ImageButton btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
@@ -254,6 +244,24 @@ public class AddCompanyActivity extends AppCompatActivity {
     private static String textOf(TextInputEditText editText) {
         Editable e = editText.getText();
         return e != null ? e.toString() : "";
+    }
+
+    /** Pri fokus, skrolaj do poleto (adjustPan + sticky save bar). */
+    private static void wireScrollOnFocus(ScrollView scroll, View... fields) {
+        View.OnFocusChangeListener listener =
+                (v, hasFocus) -> {
+                    if (!hasFocus) {
+                        return;
+                    }
+                    scroll.post(
+                            () -> {
+                                int targetY = v.getTop() - scroll.getPaddingTop() - 24;
+                                scroll.smoothScrollTo(0, Math.max(0, targetY));
+                            });
+                };
+        for (View field : fields) {
+            field.setOnFocusChangeListener(listener);
+        }
     }
 
     /** Forma validacija + POST /companies; pri uspeh RESULT_OK i finish(). */

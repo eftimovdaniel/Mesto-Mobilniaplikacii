@@ -30,7 +30,7 @@
         <activity
             android:name=".AddCompanyActivity"
             android:exported="false"
-            android:windowSoftInputMode="adjustResize" />
+            android:windowSoftInputMode="adjustPan" />
         <activity
             android:name=".CompanyDetailActivity"
             android:exported="false" />
