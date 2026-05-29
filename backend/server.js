@@ -18,11 +18,27 @@ if (!DATABASE_URL) {
   process.exit(1);
 }
 
-const pool = new Pool({
-  connectionString: DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-  max: 5,
-});
+// Supabase pooler враќа self-signed cert; pg по default verify-а кога sslmode е во URL-то.
+// Затоа го отстрануваме sslmode од connection string и SSL го контролираме преку config.
+function buildDbConfig(rawUrl) {
+  try {
+    const url = new URL(rawUrl);
+    url.searchParams.delete("sslmode");
+    return {
+      connectionString: url.toString(),
+      ssl: { rejectUnauthorized: false },
+      max: 5,
+    };
+  } catch {
+    return {
+      connectionString: rawUrl,
+      ssl: { rejectUnauthorized: false },
+      max: 5,
+    };
+  }
+}
+
+const pool = new Pool(buildDbConfig(DATABASE_URL));
 
 function normalizeRow(r) {
   return {
