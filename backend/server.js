@@ -50,6 +50,7 @@ function normalizeRow(r) {
     email: r.email,
     phone: r.phone,
     website: r.website,
+    image_url: r.image_url || null,
     categories: Array.isArray(r.categories) ? r.categories.map(String) : [],
   };
 }
@@ -94,7 +95,7 @@ app.get("/companies", async (req, res) => {
     }
 
     const sql =
-      "SELECT id, name, address, latitude, longitude, email, phone, website, categories " +
+      "SELECT id, name, address, latitude, longitude, email, phone, website, image_url, categories " +
       "FROM companies" +
       (where.length ? ` WHERE ${where.join(" AND ")}` : "") +
       " ORDER BY id DESC";
@@ -132,9 +133,9 @@ app.post("/companies", async (req, res) => {
   try {
     const sql =
       "INSERT INTO companies " +
-      "(name, address, latitude, longitude, email, phone, website, categories) " +
-      "VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb) " +
-      "RETURNING id, name, address, latitude, longitude, email, phone, website, categories";
+      "(name, address, latitude, longitude, email, phone, website, image_url, categories) " +
+      "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb) " +
+      "RETURNING id, name, address, latitude, longitude, email, phone, website, image_url, categories";
     const params = [
       String(b.name),
       String(b.address),
@@ -143,6 +144,7 @@ app.post("/companies", async (req, res) => {
       String(b.email),
       String(b.phone),
       String(b.website),
+      b.image_url ? String(b.image_url) : null,
       JSON.stringify(cats.map(String)),
     ];
     const { rows } = await pool.query(sql, params);

@@ -33,8 +33,23 @@ public final class GlideLogoLoader {
 
     private GlideLogoLoader() {}
 
+    /** Зачувано за компатибилност (само website). */
     public static void load(ImageView target, @Nullable String website) {
+        load(target, null, website);
+    }
+
+    /**
+     * Прв приоритет е `imageUrl` (рачно внесен од корисникот). Ако е празен → og:image
+     * од website-от → favicon fallback → локален placeholder.
+     */
+    public static void load(
+            ImageView target, @Nullable String imageUrl, @Nullable String website) {
         target.setTag(TAG_WEBSITE, website);
+
+        if (!TextUtils.isEmpty(imageUrl)) {
+            applyChain(target, imageUrl, LogoUrls.candidatesFor(website));
+            return;
+        }
 
         String cachedOg = OgImageResolver.cachedFor(target.getContext(), website);
         if (!TextUtils.isEmpty(cachedOg)) {
@@ -42,7 +57,6 @@ public final class GlideLogoLoader {
             return;
         }
 
-        // Прикажи fallback (favicon) веднаш дека да не е празно додека fetch-ираме og:image.
         applyChain(target, null, LogoUrls.candidatesFor(website));
 
         if (TextUtils.isEmpty(website) || cachedOg != null /* keширано "" = негативно */) {
@@ -52,12 +66,11 @@ public final class GlideLogoLoader {
         OgImageResolver.resolve(
                 target.getContext(),
                 website,
-                imageUrl -> {
-                    // Проверка дека ImageView не е recycled на друга ставка.
+                resolved -> {
                     Object current = target.getTag(TAG_WEBSITE);
                     if (current == null || !current.equals(website)) return;
-                    if (TextUtils.isEmpty(imageUrl)) return;
-                    applyChain(target, imageUrl, LogoUrls.candidatesFor(website));
+                    if (TextUtils.isEmpty(resolved)) return;
+                    applyChain(target, resolved, LogoUrls.candidatesFor(website));
                 });
     }
 

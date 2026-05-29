@@ -15,6 +15,8 @@
     <string name="btn_save">ЗАЧУВАЈ</string>
     <string name="hint_search_business">Пребарај бизнис…</string>
     <string name="search_no_results">Нема резултати за пребарувањето.</string>
+    <string name="label_image_url">URL на слика (опционално)</string>
+    <string name="label_image_url_helper">Залепи директен линк до слика/лого. Пр.: https://…/logo.png. Ако оставиш празно, ке се пробуваат favicon/og:image.</string>
     <string name="cat_service">Сервис</string>
     <string name="cat_entertainment">Забава</string>
     <string name="cat_industry">Индустрија</string>

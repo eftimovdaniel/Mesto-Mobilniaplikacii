@@ -20,6 +20,11 @@ public class Company implements Serializable {
     private String email;
     private String phone;
     private String website;
+
+    @Nullable
+    @com.google.gson.annotations.SerializedName("image_url")
+    private String imageUrl;
+
     private List<String> categories = new ArrayList<>();
 
     @Nullable
@@ -53,6 +58,11 @@ public class Company implements Serializable {
 
     public String getWebsite() {
         return website;
+    }
+
+    @Nullable
+    public String getImageUrl() {
+        return imageUrl;
     }
 
     public List<String> getCategories() {
@@ -92,6 +102,10 @@ public class Company implements Serializable {
 
     public void setWebsite(String website) {
         this.website = website;
+    }
+
+    public void setImageUrl(@Nullable String imageUrl) {
+        this.imageUrl = imageUrl;
     }
 
     public void setCategories(List<String> categories) {

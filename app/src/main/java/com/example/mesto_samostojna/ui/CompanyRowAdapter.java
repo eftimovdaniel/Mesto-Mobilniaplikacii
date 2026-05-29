@@ -64,7 +64,7 @@ public class CompanyRowAdapter extends BaseAdapter {
         TextView phone = row.findViewById(R.id.row_phone);
         TextView website = row.findViewById(R.id.row_website);
 
-        GlideLogoLoader.load(icon, c.getWebsite());
+        GlideLogoLoader.load(icon, c.getImageUrl(), c.getWebsite());
         title.setText(c.getName());
         address.setText(c.getAddress());
         phone.setText(c.getPhone());

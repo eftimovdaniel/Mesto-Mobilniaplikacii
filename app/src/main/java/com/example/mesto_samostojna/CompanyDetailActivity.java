@@ -70,7 +70,7 @@ public class CompanyDetailActivity extends AppCompatActivity {
         TextView website = findViewById(R.id.detail_website);
         ChipGroup chips = findViewById(R.id.detail_categories);
 
-        GlideLogoLoader.load(logo, c.getWebsite());
+        GlideLogoLoader.load(logo, c.getImageUrl(), c.getWebsite());
         name.setText(c.getName());
         address.setText(notEmpty(c.getAddress(), getString(R.string.detail_no_address)));
         coords.setText(String.format(
