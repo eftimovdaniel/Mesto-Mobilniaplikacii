@@ -40,10 +40,10 @@ function normalizeRow(r) {
 
 (async () => {
   try {
-    await pool.query("SELECT 1");
-    console.log("Postgres: поврзан со Supabase.");
+    const { rows } = await pool.query("SELECT current_database() as db, current_user as usr");
+    console.log("Postgres OK: db=" + rows[0].db + " user=" + rows[0].usr);
   } catch (e) {
-    console.error("Postgres: НЕМА врска. Провери DATABASE_URL.\n", e.message);
+    console.error("Postgres FAILED:", e.code, e.message);
   }
 })();
 
@@ -86,8 +86,8 @@ app.get("/companies", async (req, res) => {
     const { rows } = await pool.query(sql, params);
     res.json(rows.map(normalizeRow));
   } catch (e) {
-    console.error("GET /companies", e);
-    res.status(500).json({ error: "database_error" });
+    console.error("GET /companies failed:", e.code, e.message);
+    res.status(500).json({ error: "database_error", code: e.code, detail: e.message });
   }
 });
 
@@ -132,8 +132,8 @@ app.post("/companies", async (req, res) => {
     const { rows } = await pool.query(sql, params);
     res.status(201).json(normalizeRow(rows[0]));
   } catch (e) {
-    console.error("POST /companies", e);
-    res.status(500).json({ error: "database_error" });
+    console.error("POST /companies failed:", e.code, e.message);
+    res.status(500).json({ error: "database_error", code: e.code, detail: e.message });
   }
 });
 
