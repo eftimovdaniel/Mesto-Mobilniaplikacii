@@ -9,13 +9,12 @@ import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 
-/** PostgREST повици кон Supabase табела {@code companies}. */
+/** REST повици кон сопствениот backend (Express + Postgres). */
 public interface MestoApi {
 
-    @GET("rest/v1/companies?select=*&order=id.desc")
+    @GET("companies")
     Call<List<Company>> listCompanies();
 
-    /** Supabase враќа низа со еден запис при {@code Prefer: return=representation}. */
-    @POST("rest/v1/companies")
-    Call<List<Company>> createCompany(@Body Company company);
+    @POST("companies")
+    Call<Company> createCompany(@Body Company company);
 }

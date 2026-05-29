@@ -1,6 +1,7 @@
 # Копирај како local.properties (local.properties НЕ се комитира на Git).
 sdk.dir=/path/to/Android/sdk
 
-# Supabase → Settings → API → Project URL + Publishable key
-supabase.url=https://YOUR_PROJECT_REF.supabase.co
-supabase.anon.key=YOUR_PUBLISHABLE_KEY
+# URL на mesto backend (види backend/README.md за деплојмент на Render)
+# Локално (емулатор): http://10.0.2.2:3000
+# Продукција: https://mesto-api-xxxx.onrender.com
+backend.url=

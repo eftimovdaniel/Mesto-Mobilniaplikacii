@@ -1,62 +1,49 @@
 /**
- * Mini REST API: Express + mysql2.
- * Start: npm install && npm start (chita .env od backend direktorium).
+ * mesto REST API: Express + Postgres (Supabase).
+ * Start: npm install && npm start (чита .env од backend директориум).
+ * Env:
+ *   PORT (по default 3000)
+ *   DATABASE_URL = postgresql://postgres.<ref>:<password>@<host>:6543/postgres?sslmode=require
  */
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const mysql = require("mysql2/promise");
+const { Pool } = require("pg");
 
 const PORT = Number(process.env.PORT || 3000);
+const DATABASE_URL = process.env.DATABASE_URL;
 
-// Pool kon bazata "mesto"; parametrite od .env (DB_HOST, DB_USER, ...).
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || "127.0.0.1",
-  port: Number(process.env.DB_PORT || 3306),
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "",
-  database: process.env.DB_NAME || "mesto",
-  waitForConnections: true,
-  connectionLimit: 10,
-});
-
-function normalizeCategories(row) {
-  const raw = row.categories;
-  if (raw == null) {
-    return [];
-  }
-  if (Array.isArray(raw)) {
-    return raw.map(String);
-  }
-  if (typeof raw === "string") {
-    try {
-      const v = JSON.parse(raw);
-      return Array.isArray(v) ? v.map(String) : [];
-    } catch {
-      return [];
-    }
-  }
-  if (Buffer.isBuffer(raw)) {
-    try {
-      const v = JSON.parse(raw.toString("utf8"));
-      return Array.isArray(v) ? v.map(String) : [];
-    } catch {
-      return [];
-    }
-  }
-  return [];
+if (!DATABASE_URL) {
+  console.error("Грешка: треба DATABASE_URL во .env (Supabase → Connect → URI).");
+  process.exit(1);
 }
 
-// Pri start proba SELECT 1 — ako padne, Android ke dobiva database_error pri CRUD.
+const pool = new Pool({
+  connectionString: DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+  max: 5,
+});
+
+function normalizeRow(r) {
+  return {
+    id: Number(r.id),
+    name: r.name,
+    address: r.address,
+    latitude: Number(r.latitude),
+    longitude: Number(r.longitude),
+    email: r.email,
+    phone: r.phone,
+    website: r.website,
+    categories: Array.isArray(r.categories) ? r.categories.map(String) : [],
+  };
+}
+
 (async () => {
   try {
     await pool.query("SELECT 1");
-    console.log("MySQL: povrzano so bazata \"" + (process.env.DB_NAME || "mesto") + "\".");
+    console.log("Postgres: поврзан со Supabase.");
   } catch (e) {
-    console.error(
-      "MySQL: NEMA vrska. Pusti MySQL, proveri .env (DB_USER/DB_PASSWORD) i deka postoi bazata (schema.sql).\n",
-      e.message
-    );
+    console.error("Postgres: НЕМА врска. Провери DATABASE_URL.\n", e.message);
   }
 })();
 
@@ -64,58 +51,46 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Brza proverka dali procesot zboruva (bez MySQL).
+app.get("/", (_req, res) => {
+  res.json({ ok: true, service: "mesto-api", endpoints: ["/health", "/companies"] });
+});
+
 app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
-// Lista kompanii za mobilnata aplikacija (filtri opcionalno po kategorija i imе).
+// GET /companies?category=service&q=name
 app.get("/companies", async (req, res) => {
   try {
     const category = req.query.category;
     const q = req.query.q;
 
-    let sql =
-      "SELECT id, name, address, latitude, longitude, email, phone, website, categories FROM companies ORDER BY id DESC";
+    const where = [];
     const params = [];
 
-    if (category && q) {
-      sql =
-        "SELECT id, name, address, latitude, longitude, email, phone, website, categories FROM companies " +
-        "WHERE JSON_CONTAINS(categories, ?, '$') AND name LIKE ? ORDER BY id DESC";
-      params.push(JSON.stringify(category), "%" + String(q) + "%");
-    } else if (category) {
-      sql =
-        "SELECT id, name, address, latitude, longitude, email, phone, website, categories FROM companies " +
-        "WHERE JSON_CONTAINS(categories, ?, '$') ORDER BY id DESC";
-      params.push(JSON.stringify(category));
-    } else if (q) {
-      sql =
-        "SELECT id, name, address, latitude, longitude, email, phone, website, categories FROM companies " +
-        "WHERE name LIKE ? ORDER BY id DESC";
-      params.push("%" + String(q) + "%");
+    if (category) {
+      params.push(JSON.stringify([String(category)]));
+      where.push(`categories @> $${params.length}::jsonb`);
+    }
+    if (q) {
+      params.push(`%${String(q)}%`);
+      where.push(`name ILIKE $${params.length}`);
     }
 
-    const [rows] = await pool.query(sql, params);
-    const out = rows.map((r) => ({
-      id: Number(r.id),
-      name: r.name,
-      address: r.address,
-      latitude: Number(r.latitude),
-      longitude: Number(r.longitude),
-      email: r.email,
-      phone: r.phone,
-      website: r.website,
-      categories: normalizeCategories(r),
-    }));
-    res.json(out);
+    const sql =
+      "SELECT id, name, address, latitude, longitude, email, phone, website, categories " +
+      "FROM companies" +
+      (where.length ? ` WHERE ${where.join(" AND ")}` : "") +
+      " ORDER BY id DESC";
+
+    const { rows } = await pool.query(sql, params);
+    res.json(rows.map(normalizeRow));
   } catch (e) {
-    console.error(e);
+    console.error("GET /companies", e);
     res.status(500).json({ error: "database_error" });
   }
 });
 
-// Nova kompanija od forma vo aplikacija; poleinjata site zadolzitelni + barem edna kategorija.
 app.post("/companies", async (req, res) => {
   const b = req.body || {};
   const required = [
@@ -137,46 +112,31 @@ app.post("/companies", async (req, res) => {
   if (!Array.isArray(cats) || cats.length === 0) {
     return res.status(400).json({ error: "missing_categories" });
   }
-  const categoriesJson = JSON.stringify(cats.map(String));
 
   try {
-    const [result] = await pool.execute(
-      `INSERT INTO companies (name, address, latitude, longitude, email, phone, website, categories)
-       VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON))`,
-      [
-        String(b.name),
-        String(b.address),
-        Number(b.latitude),
-        Number(b.longitude),
-        String(b.email),
-        String(b.phone),
-        String(b.website),
-        categoriesJson,
-      ]
-    );
-    const id = result.insertId;
-    const [rows] = await pool.query(
-      "SELECT id, name, address, latitude, longitude, email, phone, website, categories FROM companies WHERE id = ?",
-      [id]
-    );
-    const row = rows[0];
-    res.status(201).json({
-      id: Number(row.id),
-      name: row.name,
-      address: row.address,
-      latitude: Number(row.latitude),
-      longitude: Number(row.longitude),
-      email: row.email,
-      phone: row.phone,
-      website: row.website,
-      categories: normalizeCategories(row),
-    });
+    const sql =
+      "INSERT INTO companies " +
+      "(name, address, latitude, longitude, email, phone, website, categories) " +
+      "VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb) " +
+      "RETURNING id, name, address, latitude, longitude, email, phone, website, categories";
+    const params = [
+      String(b.name),
+      String(b.address),
+      Number(b.latitude),
+      Number(b.longitude),
+      String(b.email),
+      String(b.phone),
+      String(b.website),
+      JSON.stringify(cats.map(String)),
+    ];
+    const { rows } = await pool.query(sql, params);
+    res.status(201).json(normalizeRow(rows[0]));
   } catch (e) {
-    console.error(e);
+    console.error("POST /companies", e);
     res.status(500).json({ error: "database_error" });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`mesto API na http://localhost:${PORT}`);
+  console.log(`mesto API слуша на http://localhost:${PORT}`);
 });

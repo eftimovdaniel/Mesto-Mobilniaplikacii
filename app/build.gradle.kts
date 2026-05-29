@@ -11,13 +11,12 @@ val localProperties = Properties().apply {
     }
 }
 
-val supabaseUrl = localProperties.getProperty("supabase.url", "").trim()
-val supabaseAnonKey = localProperties.getProperty("supabase.anon.key", "").trim()
+val backendUrl = localProperties.getProperty("backend.url", "").trim()
 
-if (supabaseUrl.isEmpty() || supabaseAnonKey.isEmpty()) {
+if (backendUrl.isEmpty()) {
     logger.warn(
-        "Додај supabase.url и supabase.anon.key во local.properties " +
-            "(види local.properties.example). Без тоа API повиците нема да работат."
+        "Додај backend.url=<твој Render URL> во local.properties " +
+            "(види local.properties.example)."
     )
 }
 
@@ -38,9 +37,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Supabase PostgREST (клучевите од local.properties — не на Git).
-        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
-        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
+        // Сопствен backend (Express + Postgres). URL од local.properties → не оди на Git.
+        buildConfigField("String", "BACKEND_URL", "\"$backendUrl\"")
     }
 
     buildFeatures {

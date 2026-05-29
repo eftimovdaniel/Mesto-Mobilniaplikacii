@@ -1,5 +1,6 @@
 package com.example.mesto_samostojna;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +12,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.example.mesto_samostojna.data.Company;
 import com.example.mesto_samostojna.ui.CompanyRowAdapter;
 
 /** Eden tab: ListView so kompanii za izbranata kategorija + filter od MainActivity. */
@@ -48,6 +50,15 @@ public class CompanyListFragment extends Fragment {
         list.setEmptyView(empty);
         adapter = new CompanyRowAdapter(requireContext());
         list.setAdapter(adapter);
+        list.setOnItemClickListener((parent, view, position, id) -> {
+            Company c = adapter.getItem(position);
+            if (c == null) {
+                return;
+            }
+            Intent intent = new Intent(requireContext(), CompanyDetailActivity.class);
+            intent.putExtra(CompanyDetailActivity.EXTRA_COMPANY, c);
+            startActivity(intent);
+        });
         return v;
     }
 

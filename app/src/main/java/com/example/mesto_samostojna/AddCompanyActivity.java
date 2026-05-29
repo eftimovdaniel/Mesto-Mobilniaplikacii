@@ -304,15 +304,13 @@ public class AddCompanyActivity extends AppCompatActivity {
         MestoApi api = ApiClient.getApi();
         api.createCompany(company)
                 .enqueue(
-                        new Callback<List<Company>>() {
+                        new Callback<Company>() {
                             @Override
                             public void onResponse(
-                                    @NonNull Call<List<Company>> call,
-                                    @NonNull Response<List<Company>> response) {
+                                    @NonNull Call<Company> call,
+                                    @NonNull Response<Company> response) {
                                 btnSave.setEnabled(true);
-                                if (response.isSuccessful()
-                                        && response.body() != null
-                                        && !response.body().isEmpty()) {
+                                if (response.isSuccessful() && response.body() != null) {
                                     setResult(RESULT_OK);
                                     finish();
                                 } else {
@@ -325,7 +323,7 @@ public class AddCompanyActivity extends AppCompatActivity {
                             }
 
                             @Override
-                            public void onFailure(@NonNull Call<List<Company>> call, @NonNull Throwable t) {
+                            public void onFailure(@NonNull Call<Company> call, @NonNull Throwable t) {
                                 btnSave.setEnabled(true);
                                 Toast.makeText(
                                                 AddCompanyActivity.this,

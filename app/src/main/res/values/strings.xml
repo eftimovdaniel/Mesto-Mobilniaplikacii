@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">mesto</string>
+    <string name="app_name">Mесто</string>
     <string name="brand_mesto">Место</string>
-    <string name="screen_new_company_title_small">нова</string>
-    <string name="screen_new_company_title_large">компанија</string>
+    <string name="screen_new_company_title_small">Нова</string>
+    <string name="screen_new_company_title_large">Компанија</string>
     <string name="label_name">НАЗИВ</string>
     <string name="label_address">АДРЕСА</string>
     <string name="label_latitude">LATITUDE</string>
@@ -14,7 +14,7 @@
     <string name="label_location">ЛОКАЦИЈА</string>
     <string name="btn_save">ЗАЧУВАЈ</string>
     <string name="hint_search_business">Пребарај бизнис…</string>
-    <string name="cat_service">сервис</string>
+    <string name="cat_service">Сервис</string>
     <string name="cat_entertainment">Забава</string>
     <string name="cat_industry">Индустрија</string>
     <string name="cat_education">Едукација</string>
@@ -30,18 +30,22 @@
     <string name="splash_nav_bag">Додај</string>
     <string name="splash_nav_wish">Омилено</string>
     <string name="splash_nav_account">Профил</string>
-
-    <string name="main_headline">локални бизниси</string>
+    <string name="main_headline">Локални бизниси</string>
     <string name="main_tagline">Додај компанија, пребарувај и откриј го твоето место.</string>
-
     <string name="list_empty">Нема записи. Додај компанија подолу.</string>
     <string name="error_network">Нема врска со серверот. Провери дали API работи и интернет.</string>
     <string name="error_save_server">Серверот не го зачува записот.</string>
     <string name="error_categories_min_one">Избери барем една категорија.</string>
     <string name="proximity_near">Блиску сте до %s (под 50 м).</string>
-
     <string name="btn_find_location">Најди локација од адреса</string>
     <string name="geocoder_ok">Координатите се пополнети.</string>
     <string name="geocoder_failed">Не се најде локација за оваа адреса. Провери го текстот или внеси lat/lng рачно.</string>
     <string name="geocoder_missing">Овој уред нема Geocoder (услуга за адреси).</string>
+    <string name="detail_title">Детали</string>
+    <string name="detail_no_phone">Нема телефон</string>
+    <string name="detail_no_email">Нема email</string>
+    <string name="detail_no_website">Нема веб страна</string>
+    <string name="detail_no_address">Нема адреса</string>
+    <string name="detail_no_app">Нема апликација за оваа акција.</string>
+    <string name="detail_pick_app">Избери апликација</string>
 </resources>
