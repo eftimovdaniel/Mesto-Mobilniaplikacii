@@ -11,6 +11,7 @@
 
     <!-- Заглавје: назад + наслов (serif) -->
     <LinearLayout
+        android:id="@+id/add_company_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
@@ -57,17 +58,20 @@
         </LinearLayout>
     </LinearLayout>
 
-    <!-- Скрол со полињата (зема целиот простор помеѓу header-от и копчето) -->
-    <androidx.core.widget.NestedScrollView
+    <!-- Еден скрол за сè (емулатор: влечи со глувчето / scrollbar десно) -->
+    <ScrollView
         android:id="@+id/add_company_scroll"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:clipToPadding="false"
-        android:fillViewport="true"
+        android:fadeScrollbars="false"
+        android:fillViewport="false"
+        android:scrollbars="vertical"
+        android:scrollbarStyle="outsideOverlay"
         android:paddingStart="20dp"
         android:paddingEnd="20dp"
-        android:paddingBottom="16dp">
+        android:paddingBottom="8dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -269,34 +273,6 @@
 
             <Space
                 android:layout_width="match_parent"
-                android:layout_height="12dp" />
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/til_image_url"
-                style="@style/Widget.Material3.TextInputLayout.FilledBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/label_image_url"
-                app:boxBackgroundColor="@color/linen"
-                app:boxCornerRadiusBottomEnd="16dp"
-                app:boxCornerRadiusBottomStart="16dp"
-                app:boxCornerRadiusTopEnd="16dp"
-                app:boxCornerRadiusTopStart="16dp"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp"
-                app:helperText="@string/label_image_url_helper"
-                app:helperTextEnabled="true">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/input_image_url"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="textUri"
-                    android:textColor="@color/ink" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <Space
-                android:layout_width="match_parent"
                 android:layout_height="20dp" />
 
             <TextView
@@ -391,29 +367,24 @@
                     android:textColor="@color/ink"
                     android:textSize="14sp" />
             </LinearLayout>
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="24dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_save"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="24dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="@string/btn_save"
+                android:textAllCaps="true"
+                android:textSize="15sp"
+                app:backgroundTint="@color/ink"
+                app:cornerRadius="28dp" />
         </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
-
-    <!-- Sticky копче на дното – секогаш видливо -->
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/sand" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_save"
-        style="@style/Widget.Material3.Button"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginEnd="20dp"
-        android:layout_marginBottom="16dp"
-        android:insetTop="0dp"
-        android:insetBottom="0dp"
-        android:text="@string/btn_save"
-        android:textAllCaps="true"
-        android:textSize="15sp"
-        app:backgroundTint="@color/ink"
-        app:cornerRadius="28dp" />
+    </ScrollView>
 </LinearLayout>

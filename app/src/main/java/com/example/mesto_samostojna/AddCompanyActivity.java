@@ -9,6 +9,7 @@ import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
@@ -72,13 +73,24 @@ public class AddCompanyActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_add_company);
 
-        View root = findViewById(R.id.add_company_root);
+        View header = findViewById(R.id.add_company_header);
+        ScrollView scroll = findViewById(R.id.add_company_scroll);
         ViewCompat.setOnApplyWindowInsetsListener(
-                root,
+                findViewById(R.id.add_company_root),
                 (v, insets) -> {
                     Insets sb = insets.getInsets(WindowInsetsCompat.Type.systemBars());
                     Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
-                    v.setPadding(sb.left, sb.top, sb.right, Math.max(sb.bottom, ime.bottom));
+                    header.setPadding(
+                            header.getPaddingLeft(),
+                            sb.top + 12,
+                            header.getPaddingRight(),
+                            header.getPaddingBottom());
+                    int bottomPad = Math.max(sb.bottom, ime.bottom) + 8;
+                    scroll.setPadding(
+                            scroll.getPaddingLeft(),
+                            scroll.getPaddingTop(),
+                            scroll.getPaddingRight(),
+                            bottomPad);
                     return insets;
                 });
 
@@ -261,8 +273,6 @@ public class AddCompanyActivity extends AppCompatActivity {
         String email = textOf(findViewById(R.id.input_email));
         String phone = textOf(findViewById(R.id.input_phone));
         String website = textOf(findViewById(R.id.input_website));
-        String imageUrl = textOf(findViewById(R.id.input_image_url));
-
         boolean ok = true;
         if (TextUtils.isEmpty(name.trim())) {
             tilName.setError(getString(R.string.error_required));
@@ -317,7 +327,6 @@ public class AddCompanyActivity extends AppCompatActivity {
         company.setEmail(email.trim());
         company.setPhone(phone.trim());
         company.setWebsite(website.trim());
-        company.setImageUrl(TextUtils.isEmpty(imageUrl.trim()) ? null : imageUrl.trim());
         company.setCategories(categorySlugs);
 
         btnSave.setEnabled(false);
