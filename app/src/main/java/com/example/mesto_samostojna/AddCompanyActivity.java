@@ -59,6 +59,7 @@ public class AddCompanyActivity extends AppCompatActivity {
     private MaterialCheckBox cbCatEntertainment;
     private MaterialCheckBox cbCatIndustry;
     private MaterialCheckBox cbCatEducation;
+    private MaterialCheckBox cbCatOther;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -81,6 +82,7 @@ public class AddCompanyActivity extends AppCompatActivity {
         cbCatEntertainment = findViewById(R.id.cb_cat_entertainment);
         cbCatIndustry = findViewById(R.id.cb_cat_industry);
         cbCatEducation = findViewById(R.id.cb_cat_education);
+        cbCatOther = findViewById(R.id.cb_cat_other);
 
         ImageButton btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
@@ -358,6 +360,9 @@ public class AddCompanyActivity extends AppCompatActivity {
         }
         if (cbCatEducation.isChecked()) {
             out.add("education");
+        }
+        if (cbCatOther.isChecked()) {
+            out.add("other");
         }
         return out;
     }

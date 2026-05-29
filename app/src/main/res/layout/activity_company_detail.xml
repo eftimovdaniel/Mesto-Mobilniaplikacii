@@ -38,6 +38,26 @@
             android:paddingEnd="20dp"
             android:paddingTop="8dp">
 
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:layout_marginBottom="14dp"
+                app:cardBackgroundColor="@color/linen"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/sand"
+                app:strokeWidth="1dp">
+
+                <ImageView
+                    android:id="@+id/detail_logo"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/label_name"
+                    android:padding="6dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_company_placeholder" />
+            </com.google.android.material.card.MaterialCardView>
+
             <TextView
                 android:id="@+id/detail_name"
                 android:layout_width="match_parent"

@@ -305,6 +305,13 @@
                     android:layout_height="wrap_content"
                     android:text="@string/cat_education"
                     android:textColor="@color/ink" />
+
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/cb_cat_other"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/cat_other"
+                    android:textColor="@color/ink" />
             </LinearLayout>
 
             <Space

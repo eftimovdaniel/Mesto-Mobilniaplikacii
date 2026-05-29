@@ -18,6 +18,7 @@
     <string name="cat_entertainment">Забава</string>
     <string name="cat_industry">Индустрија</string>
     <string name="cat_education">Едукација</string>
+    <string name="cat_other">Друго</string>
     <string name="nav_back">Назад</string>
     <string name="open_add_company">Нова компанија</string>
     <string name="location_placeholder">41.7452° N - 22.1939° E</string>
@@ -37,6 +38,11 @@
     <string name="error_save_server">Серверот не го зачува записот.</string>
     <string name="error_categories_min_one">Избери барем една категорија.</string>
     <string name="proximity_near">Блиску сте до %s (под 50 м).</string>
+    <string name="geofence_channel_name">Близина до место</string>
+    <string name="geofence_channel_desc">Известувања кога си блиску до локален бизнис</string>
+    <string name="geofence_notif_title">Место — блиску си!</string>
+    <string name="geofence_notif_body">Имаш време? Посети го %s — под 50 m.</string>
+    <string name="geofence_notif_big">%1$s е блиску (%2$s). Допри за детали.</string>
     <string name="btn_find_location">Најди локација од адреса</string>
     <string name="geocoder_ok">Координатите се пополнети.</string>
     <string name="geocoder_failed">Не се најде локација за оваа адреса. Провери го текстот или внеси lat/lng рачно.</string>

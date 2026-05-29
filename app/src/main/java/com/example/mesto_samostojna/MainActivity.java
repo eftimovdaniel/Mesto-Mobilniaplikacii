@@ -3,7 +3,7 @@ package com.example.mesto_samostojna;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.Location;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -25,13 +25,8 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.example.mesto_samostojna.api.ApiClient;
 import com.example.mesto_samostojna.api.MestoApi;
 import com.example.mesto_samostojna.data.Company;
-import com.example.mesto_samostojna.util.GeoUtils;
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationResult;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.Priority;
+import com.example.mesto_samostojna.geofence.GeofenceManager;
+import com.example.mesto_samostojna.geofence.ProximityNotifier;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
@@ -40,63 +35,59 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.ConcurrentHashMap;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
- * Biznis direktorium: TabLayout + ViewPager (swipe), lista so ListView vo fragment, prebaruvanje po
- * naziv vo ramki na tekoven tab, toolbar ikona za nova kompanija, oddalečen server + Toast pri blizina pod 50 m.
+ * Бизнис директориум: табови, листа, пребарување, geofence нотификации при влез &lt; 50 m.
  */
 public class MainActivity extends AppCompatActivity {
 
     public static final String[] CATEGORY_SLUGS = {
-        "service", "entertainment", "industry", "education"
+        "service", "entertainment", "industry", "education", "other"
     };
 
     private static final int[] TAB_LABELS = {
         R.string.cat_service,
         R.string.cat_entertainment,
         R.string.cat_industry,
-        R.string.cat_education
+        R.string.cat_education,
+        R.string.cat_other
     };
-
-    private static final double PROXIMITY_RADIUS_M = 50.0;
-    private static final long PROXIMITY_TOAST_COOLDOWN_MS = 90_000L;
 
     private final List<Company> companies = new ArrayList<>();
     private String searchQuery = "";
 
-    private final ConcurrentHashMap<Integer, Long> proximityLastToastAt = new ConcurrentHashMap<>();
-
     private TextInputEditText inputSearch;
     private MaterialToolbar toolbar;
 
-    private FusedLocationProviderClient fusedClient;
-    private LocationRequest locationRequest;
-    private final LocationCallback locationCallback =
-            new LocationCallback() {
-                @Override
-                public void onLocationResult(@NonNull LocationResult locationResult) {
-                    Location loc = locationResult.getLastLocation();
-                    if (loc != null) {
-                        checkProximity(loc);
-                    }
-                }
-            };
-
-    private final ActivityResultLauncher<String[]> requestPermissionLauncher =
+    private final ActivityResultLauncher<String[]> requestLocationLauncher =
             registerForActivityResult(
                     new ActivityResultContracts.RequestMultiplePermissions(),
                     result -> {
                         Boolean fine = result.get(Manifest.permission.ACCESS_FINE_LOCATION);
                         Boolean coarse = result.get(Manifest.permission.ACCESS_COARSE_LOCATION);
                         if (Boolean.TRUE.equals(fine) || Boolean.TRUE.equals(coarse)) {
-                            startLocationUpdates();
+                            requestBackgroundLocationIfNeeded();
                         }
                     });
+
+    private final ActivityResultLauncher<String> requestBackgroundLocationLauncher =
+            registerForActivityResult(
+                    new ActivityResultContracts.RequestPermission(),
+                    granted -> {
+                        if (granted) {
+                            registerGeofencesForLoadedCompanies();
+                        }
+                        requestNotificationPermissionIfNeeded();
+                    });
+
+    private final ActivityResultLauncher<String> requestNotificationLauncher =
+            registerForActivityResult(
+                    new ActivityResultContracts.RequestPermission(),
+                    granted -> registerGeofencesForLoadedCompanies());
 
     private final ActivityResultLauncher<Intent> addCompanyLauncher =
             registerForActivityResult(
@@ -113,17 +104,13 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        ProximityNotifier.ensureChannel(this);
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-
-        fusedClient = LocationServices.getFusedLocationProviderClient(this);
-        locationRequest =
-                new LocationRequest.Builder(Priority.PRIORITY_BALANCED_POWER_ACCURACY, 12_000L)
-                        .setMinUpdateIntervalMillis(8_000L)
-                        .build();
 
         toolbar = findViewById(R.id.toolbar);
         toolbar.inflateMenu(R.menu.menu_main);
@@ -152,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
                 });
 
         loadCompanies();
-        maybeRequestLocationAndStart();
+        maybeRequestPermissions();
     }
 
     private boolean onToolbarMenuItemClick(MenuItem item) {
@@ -163,61 +150,55 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-    private void maybeRequestLocationAndStart() {
+    private void maybeRequestPermissions() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                         == PackageManager.PERMISSION_GRANTED
                 || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
                         == PackageManager.PERMISSION_GRANTED) {
-            startLocationUpdates();
+            requestBackgroundLocationIfNeeded();
+            requestNotificationPermissionIfNeeded();
             return;
         }
-        requestPermissionLauncher.launch(
+        requestLocationLauncher.launch(
                 new String[] {
                     Manifest.permission.ACCESS_FINE_LOCATION,
                     Manifest.permission.ACCESS_COARSE_LOCATION
                 });
     }
 
-    private void startLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) {
+    private void requestBackgroundLocationIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            registerGeofencesForLoadedCompanies();
             return;
         }
-        fusedClient.removeLocationUpdates(locationCallback);
-        fusedClient.requestLocationUpdates(
-                locationRequest, locationCallback, getMainLooper());
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            registerGeofencesForLoadedCompanies();
+            return;
+        }
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        requestBackgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
     }
 
-    private void checkProximity(@NonNull Location userLoc) {
-        if (companies.isEmpty()) {
+    private void requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            registerGeofencesForLoadedCompanies();
             return;
         }
-        double uLat = userLoc.getLatitude();
-        double uLon = userLoc.getLongitude();
-        long now = System.currentTimeMillis();
-        for (Company c : companies) {
-            if (c.getId() == null) {
-                continue;
-            }
-            double d =
-                    GeoUtils.distanceMeters(
-                            uLat, uLon, c.getLatitude(), c.getLongitude());
-            if (d >= PROXIMITY_RADIUS_M) {
-                continue;
-            }
-            int id = c.getId();
-            long last = proximityLastToastAt.getOrDefault(id, 0L);
-            if (now - last < PROXIMITY_TOAST_COOLDOWN_MS) {
-                continue;
-            }
-            proximityLastToastAt.put(id, now);
-            Toast.makeText(
-                            this,
-                            getString(R.string.proximity_near, c.getName()),
-                            Toast.LENGTH_LONG)
-                    .show();
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED) {
+            registerGeofencesForLoadedCompanies();
+            return;
+        }
+        requestNotificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+    }
+
+    private void registerGeofencesForLoadedCompanies() {
+        if (!companies.isEmpty()) {
+            GeofenceManager.syncGeofences(this, new ArrayList<>(companies));
         }
     }
 
@@ -257,6 +238,8 @@ public class MainActivity extends AppCompatActivity {
                                 companies.clear();
                                 if (response.isSuccessful() && response.body() != null) {
                                     companies.addAll(response.body());
+                                    GeofenceManager.syncGeofences(
+                                            MainActivity.this, new ArrayList<>(companies));
                                 } else {
                                     Toast.makeText(
                                                     MainActivity.this,
@@ -279,11 +262,5 @@ public class MainActivity extends AppCompatActivity {
                                 notifyCompanyFragments();
                             }
                         });
-    }
-
-    @Override
-    protected void onDestroy() {
-        fusedClient.removeLocationUpdates(locationCallback);
-        super.onDestroy();
     }
 }

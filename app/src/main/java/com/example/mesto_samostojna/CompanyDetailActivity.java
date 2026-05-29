@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -13,6 +14,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.mesto_samostojna.data.Company;
+import com.example.mesto_samostojna.util.GlideLogoLoader;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
@@ -33,6 +35,7 @@ public class CompanyDetailActivity extends AppCompatActivity {
         CATEGORY_LABELS.put("entertainment", R.string.cat_entertainment);
         CATEGORY_LABELS.put("industry", R.string.cat_industry);
         CATEGORY_LABELS.put("education", R.string.cat_education);
+        CATEGORY_LABELS.put("other", R.string.cat_other);
     }
 
     @Override
@@ -58,6 +61,7 @@ public class CompanyDetailActivity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(v -> finish());
         toolbar.setTitle(R.string.detail_title);
 
+        ImageView logo = findViewById(R.id.detail_logo);
         TextView name = findViewById(R.id.detail_name);
         TextView address = findViewById(R.id.detail_address);
         TextView coords = findViewById(R.id.detail_coords);
@@ -66,6 +70,7 @@ public class CompanyDetailActivity extends AppCompatActivity {
         TextView website = findViewById(R.id.detail_website);
         ChipGroup chips = findViewById(R.id.detail_categories);
 
+        GlideLogoLoader.load(logo, c.getWebsite());
         name.setText(c.getName());
         address.setText(notEmpty(c.getAddress(), getString(R.string.detail_no_address)));
         coords.setText(String.format(
