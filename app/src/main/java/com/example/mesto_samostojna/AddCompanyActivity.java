@@ -19,8 +19,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import android.widget.RadioGroup;
 import com.google.android.material.button.MaterialButton;
-import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import java.io.IOException;
@@ -61,11 +61,7 @@ public class AddCompanyActivity extends AppCompatActivity {
     private TextInputEditText inputLatitude;
     private TextInputEditText inputLongitude;
     private TextView textLocationCoords;
-    private MaterialCheckBox cbCatService;
-    private MaterialCheckBox cbCatEntertainment;
-    private MaterialCheckBox cbCatIndustry;
-    private MaterialCheckBox cbCatEducation;
-    private MaterialCheckBox cbCatOther;
+    private RadioGroup rgCategories;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -106,11 +102,7 @@ public class AddCompanyActivity extends AppCompatActivity {
         inputLatitude = findViewById(R.id.input_latitude);
         inputLongitude = findViewById(R.id.input_longitude);
         textLocationCoords = findViewById(R.id.text_location_coords);
-        cbCatService = findViewById(R.id.cb_cat_service);
-        cbCatEntertainment = findViewById(R.id.cb_cat_entertainment);
-        cbCatIndustry = findViewById(R.id.cb_cat_industry);
-        cbCatEducation = findViewById(R.id.cb_cat_education);
-        cbCatOther = findViewById(R.id.cb_cat_other);
+        rgCategories = findViewById(R.id.rg_categories);
 
         ImageButton btnBack = findViewById(R.id.btn_back);
         btnBack.setOnClickListener(v -> getOnBackPressedDispatcher().onBackPressed());
@@ -290,23 +282,15 @@ public class AddCompanyActivity extends AppCompatActivity {
             tilLongitude.setError(getString(R.string.error_required));
             ok = false;
         }
-        if (TextUtils.isEmpty(email.trim())) {
-            tilEmail.setError(getString(R.string.error_required));
-            ok = false;
-        }
         if (TextUtils.isEmpty(phone.trim())) {
             tilPhone.setError(getString(R.string.error_required));
-            ok = false;
-        }
-        if (TextUtils.isEmpty(website.trim())) {
-            tilWebsite.setError(getString(R.string.error_required));
             ok = false;
         }
 
         List<String> categorySlugs = collectCategorySlugs();
         if (categorySlugs.isEmpty()) {
             ok = false;
-            Toast.makeText(this, R.string.error_categories_min_one, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.error_pick_one_category, Toast.LENGTH_SHORT).show();
         }
 
         if (!ok) {
@@ -376,21 +360,12 @@ public class AddCompanyActivity extends AppCompatActivity {
     @NonNull
     private List<String> collectCategorySlugs() {
         List<String> out = new ArrayList<>();
-        if (cbCatService.isChecked()) {
-            out.add("service");
-        }
-        if (cbCatEntertainment.isChecked()) {
-            out.add("entertainment");
-        }
-        if (cbCatIndustry.isChecked()) {
-            out.add("industry");
-        }
-        if (cbCatEducation.isChecked()) {
-            out.add("education");
-        }
-        if (cbCatOther.isChecked()) {
-            out.add("other");
-        }
+        int id = rgCategories.getCheckedRadioButtonId();
+        if (id == R.id.rb_cat_service) out.add("service");
+        else if (id == R.id.rb_cat_entertainment) out.add("entertainment");
+        else if (id == R.id.rb_cat_industry) out.add("industry");
+        else if (id == R.id.rb_cat_education) out.add("education");
+        else if (id == R.id.rb_cat_other) out.add("other");
         return out;
     }
 }

@@ -7,9 +7,10 @@
     <string name="label_address">АДРЕСА</string>
     <string name="label_latitude">LATITUDE</string>
     <string name="label_longitude">LONGITUDE</string>
-    <string name="label_email">EMAIL</string>
+    <string name="label_email">EMAIL (опционално)</string>
     <string name="label_phone">ТЕЛЕФОН</string>
-    <string name="label_website">ВЕБ СТРАНА</string>
+    <string name="label_website">ВЕБ СТРАНА (опционално)</string>
+    <string name="error_pick_one_category">Избери една категорија.</string>
     <string name="label_category">КАТЕГОРИЈА</string>
     <string name="label_location">ЛОКАЦИЈА</string>
     <string name="btn_save">ЗАЧУВАЈ</string>

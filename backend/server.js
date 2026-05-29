@@ -110,20 +110,15 @@ app.get("/companies", async (req, res) => {
 
 app.post("/companies", async (req, res) => {
   const b = req.body || {};
-  const required = [
-    "name",
-    "address",
-    "latitude",
-    "longitude",
-    "email",
-    "phone",
-    "website",
-  ];
+  const required = ["name", "address", "latitude", "longitude", "phone"];
   for (const k of required) {
     if (b[k] === undefined || b[k] === null || b[k] === "") {
       return res.status(400).json({ error: "missing_" + k });
     }
   }
+  // email и website се опционални
+  if (b.email === undefined || b.email === null) b.email = "";
+  if (b.website === undefined || b.website === null) b.website = "";
 
   const cats = b.categories;
   if (!Array.isArray(cats) || cats.length === 0) {
