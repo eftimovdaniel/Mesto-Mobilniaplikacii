@@ -10,27 +10,22 @@ import android.text.TextWatcher;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
 import com.example.mesto_samostojna.api.ApiClient;
 import com.example.mesto_samostojna.api.MestoApi;
 import com.example.mesto_samostojna.data.Company;
-
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -309,13 +304,15 @@ public class AddCompanyActivity extends AppCompatActivity {
         MestoApi api = ApiClient.getApi();
         api.createCompany(company)
                 .enqueue(
-                        new Callback<Company>() {
+                        new Callback<List<Company>>() {
                             @Override
                             public void onResponse(
-                                    @NonNull Call<Company> call,
-                                    @NonNull Response<Company> response) {
+                                    @NonNull Call<List<Company>> call,
+                                    @NonNull Response<List<Company>> response) {
                                 btnSave.setEnabled(true);
-                                if (response.isSuccessful()) {
+                                if (response.isSuccessful()
+                                        && response.body() != null
+                                        && !response.body().isEmpty()) {
                                     setResult(RESULT_OK);
                                     finish();
                                 } else {
@@ -328,7 +325,7 @@ public class AddCompanyActivity extends AppCompatActivity {
                             }
 
                             @Override
-                            public void onFailure(@NonNull Call<Company> call, @NonNull Throwable t) {
+                            public void onFailure(@NonNull Call<List<Company>> call, @NonNull Throwable t) {
                                 btnSave.setEnabled(true);
                                 Toast.makeText(
                                                 AddCompanyActivity.this,

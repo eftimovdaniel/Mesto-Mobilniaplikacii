@@ -14,10 +14,17 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@color/cream"
-        android:elevation="0dp"
-        app:logo="@mipmap/ic_launcher"
-        app:title="@string/app_name"
-        app:titleCentered="false" />
+        android:elevation="0dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:fontFamily="serif"
+            android:text="@string/brand_mesto"
+            android:textColor="@color/ink"
+            android:textSize="26sp" />
+    </com.google.android.material.appbar.MaterialToolbar>
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabs"

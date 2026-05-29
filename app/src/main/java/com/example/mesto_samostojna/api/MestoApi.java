@@ -9,12 +9,13 @@ import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.POST;
 
-// REST povici kon istiot Node server sto zboruva so MySQL (backend/server.js).
+/** PostgREST повици кон Supabase табела {@code companies}. */
 public interface MestoApi {
 
-    @GET("companies")
+    @GET("rest/v1/companies?select=*&order=id.desc")
     Call<List<Company>> listCompanies();
 
-    @POST("companies")
-    Call<Company> createCompany(@Body Company company);
+    /** Supabase враќа низа со еден запис при {@code Prefer: return=representation}. */
+    @POST("rest/v1/companies")
+    Call<List<Company>> createCompany(@Body Company company);
 }

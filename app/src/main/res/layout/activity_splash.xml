@@ -54,8 +54,8 @@
     <!-- Централна картичка со лого (како alo центар) -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/splash_logo_card"
-        android:layout_width="160dp"
-        android:layout_height="160dp"
+        android:layout_width="260dp"
+        android:layout_height="260dp"
         app:cardBackgroundColor="@color/white"
         app:cardCornerRadius="20dp"
         app:cardElevation="4dp"
@@ -67,14 +67,13 @@
         app:strokeColor="@color/sand"
         app:strokeWidth="1dp">
 
-        <TextView
+        <ImageView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:fontFamily="serif"
-            android:gravity="center"
-            android:text="@string/app_name"
-            android:textColor="@color/ink"
-            android:textSize="36sp" />
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/app_name"
+            android:scaleType="fitCenter"
+            android:src="@drawable/logo_mesto" />
     </com.google.android.material.card.MaterialCardView>
 
     <TextView

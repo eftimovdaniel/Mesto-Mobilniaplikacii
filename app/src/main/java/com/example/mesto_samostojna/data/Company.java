@@ -2,11 +2,14 @@ package com.example.mesto_samostojna.data;
 
 import androidx.annotation.Nullable;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
 /** Model za edna kompanija — poleinjata se mapiraat vo JSON od API (POST/GET companies). */
-public class Company {
+public class Company implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     @Nullable
     private Integer id;
@@ -68,11 +71,9 @@ public class Company {
     public void setName(String name) {
         this.name = name;
     }
-
     public void setAddress(String address) {
         this.address = address;
     }
-
     public void setLatitude(double latitude) {
         this.latitude = latitude;
     }

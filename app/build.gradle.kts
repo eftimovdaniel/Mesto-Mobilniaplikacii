@@ -1,5 +1,24 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
+}
+
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) {
+        file.inputStream().use { load(it) }
+    }
+}
+
+val supabaseUrl = localProperties.getProperty("supabase.url", "").trim()
+val supabaseAnonKey = localProperties.getProperty("supabase.anon.key", "").trim()
+
+if (supabaseUrl.isEmpty() || supabaseAnonKey.isEmpty()) {
+    logger.warn(
+        "Додај supabase.url и supabase.anon.key во local.properties " +
+            "(види local.properties.example). Без тоа API повиците нема да работат."
+    )
 }
 
 android {
@@ -19,8 +38,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Емулатор: 10.0.2.2 = localhost на компјутерот. На вистински телефон стави ја LAN IP на Mac (на пр. "http://192.168.1.10:3000/").
-        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/\"")
+        // Supabase PostgREST (клучевите од local.properties — не на Git).
+        buildConfigField("String", "SUPABASE_URL", "\"$supabaseUrl\"")
+        buildConfigField("String", "SUPABASE_ANON_KEY", "\"$supabaseAnonKey\"")
     }
 
     buildFeatures {

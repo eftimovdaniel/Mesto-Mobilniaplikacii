@@ -1,0 +1,6 @@
+# Копирај како local.properties (local.properties НЕ се комитира на Git).
+sdk.dir=/path/to/Android/sdk
+
+# Supabase → Settings → API → Project URL + Publishable key
+supabase.url=https://YOUR_PROJECT_REF.supabase.co
+supabase.anon.key=YOUR_PUBLISHABLE_KEY
