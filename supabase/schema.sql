@@ -1,4 +1,4 @@
--- Изврши во Supabase → SQL Editor (еднаш по проект).
+
 
 create table public.companies (
   id bigint generated always as identity primary key,
@@ -13,9 +13,6 @@ create table public.companies (
   categories jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now()
 );
-
--- Ако базата веќе постои без image_url:
--- alter table public.companies add column if not exists image_url text;
 
 alter table public.companies enable row level security;
 
