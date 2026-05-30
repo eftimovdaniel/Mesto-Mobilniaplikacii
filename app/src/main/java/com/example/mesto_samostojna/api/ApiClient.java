@@ -15,10 +15,14 @@ public final class ApiClient {
 
     private ApiClient() {}
 
+    @SuppressWarnings({"ConstantConditions", "ConstantValue"})
     public static MestoApi getApi() {
         if (api == null) {
             synchronized (ApiClient.class) {
                 if (api == null) {
+                    // BACKEND_URL е compile-time constant (buildConfigField од local.properties).
+                    // Проверките подолу служат како runtime safety net ако некој
+                    // build-а без поставен backend.url; lint warnings се очекувани.
                     String baseUrl = BuildConfig.BACKEND_URL;
                     if (baseUrl == null || baseUrl.isEmpty()) {
                         throw new IllegalStateException(
