@@ -27,21 +27,32 @@ import com.example.mesto_samostojna.api.MestoApi;
 import com.example.mesto_samostojna.data.Company;
 import com.example.mesto_samostojna.geofence.GeofenceManager;
 import com.example.mesto_samostojna.geofence.ProximityNotifier;
+import com.example.mesto_samostojna.util.GeoUtils;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.Priority;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
- * Бизнис директориум: табови, листа, пребарување, geofence нотификации при влез &lt; 50 m.
+ * Бизнис директориум: табови, листа, пребарување по тековна категорија,
+ * Toast при < 50 m додека апликацијата е отворена + geofence нотификации
+ * како резерва кога апликацијата е во background.
  */
 public class MainActivity extends AppCompatActivity {
 
@@ -64,6 +75,25 @@ public class MainActivity extends AppCompatActivity {
     private MaterialToolbar toolbar;
     private TabLayout tabs;
     private ViewPager2 pager;
+
+    /** Foreground location tracking — Toast при < 50 m додека апликацијата е отворена. */
+    private static final float PROXIMITY_RADIUS_M = 50f;
+    /** Истата компанија да не спам-а Toast: пауза од 60 s меѓу пораки. */
+    private static final long PROXIMITY_TOAST_COOLDOWN_MS = 60_000L;
+    private FusedLocationProviderClient fusedLocationClient;
+    private final Map<Long, Long> lastToastByCompanyId = new HashMap<>();
+    private final LocationCallback proximityCallback =
+            new LocationCallback() {
+                @Override
+                public void onLocationResult(@NonNull LocationResult result) {
+                    if (result.getLastLocation() == null) {
+                        return;
+                    }
+                    onLocationUpdate(
+                            result.getLastLocation().getLatitude(),
+                            result.getLastLocation().getLongitude());
+                }
+            };
 
     private final ActivityResultLauncher<String[]> requestLocationLauncher =
             registerForActivityResult(
@@ -107,6 +137,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         ProximityNotifier.ensureChannel(this);
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -201,6 +232,93 @@ public class MainActivity extends AppCompatActivity {
     private void registerGeofencesForLoadedCompanies() {
         if (!companies.isEmpty()) {
             GeofenceManager.syncGeofences(this, new ArrayList<>(companies));
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        startProximityUpdates();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        stopProximityUpdates();
+    }
+
+    /**
+     * Запишува foreground location updates кога ќе има permission. Без overload на батерија:
+     * интервал 5 s, минимум поместување 5 m, balanced power.
+     */
+    private void startProximityUpdates() {
+        if (fusedLocationClient == null) {
+            return;
+        }
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(
+                                this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED) {
+            return;
+        }
+        LocationRequest request =
+                new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5_000L)
+                        .setMinUpdateDistanceMeters(0f)
+                        .setMinUpdateIntervalMillis(2_000L)
+                        .build();
+        fusedLocationClient.requestLocationUpdates(request, proximityCallback, getMainLooper());
+        // Иницијална проверка со последната позната локација (без чекање на нов update).
+        try {
+            fusedLocationClient
+                    .getLastLocation()
+                    .addOnSuccessListener(
+                            location -> {
+                                if (location != null) {
+                                    onLocationUpdate(
+                                            location.getLatitude(), location.getLongitude());
+                                }
+                            });
+        } catch (SecurityException ignored) {
+            // permission може да биде одземен помеѓу check и call — игнорирај.
+        }
+    }
+
+    private void stopProximityUpdates() {
+        if (fusedLocationClient != null) {
+            fusedLocationClient.removeLocationUpdates(proximityCallback);
+        }
+    }
+
+    /**
+     * Кога ќе пристигне нова локација: за секоја компанија пресмета Haversine растојание;
+     * ако е под 50 m и не е прикажан Toast за неа во последните 60 s — прикажи Toast.
+     */
+    private void onLocationUpdate(double lat, double lng) {
+        if (companies.isEmpty()) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        for (Company c : companies) {
+            if (c.getId() == null) {
+                continue;
+            }
+            double d =
+                    GeoUtils.distanceMeters(
+                            lat, lng, c.getLatitude(), c.getLongitude());
+            if (d > PROXIMITY_RADIUS_M) {
+                continue;
+            }
+            Long last = lastToastByCompanyId.get((long) c.getId());
+            if (last != null && (now - last) < PROXIMITY_TOAST_COOLDOWN_MS) {
+                continue;
+            }
+            lastToastByCompanyId.put((long) c.getId(), now);
+            Toast.makeText(
+                            this,
+                            getString(R.string.proximity_near, c.getName()),
+                            Toast.LENGTH_LONG)
+                    .show();
         }
     }
 
