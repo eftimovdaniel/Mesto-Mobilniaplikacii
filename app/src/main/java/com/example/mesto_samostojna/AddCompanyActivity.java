@@ -15,8 +15,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import android.widget.RadioGroup;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.checkbox.MaterialCheckBox;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import java.io.IOException;
@@ -57,7 +57,11 @@ public class AddCompanyActivity extends AppCompatActivity {
     private TextInputEditText inputLatitude;
     private TextInputEditText inputLongitude;
     private TextView textLocationCoords;
-    private RadioGroup rgCategories;
+    private MaterialCheckBox cbService;
+    private MaterialCheckBox cbEntertainment;
+    private MaterialCheckBox cbIndustry;
+    private MaterialCheckBox cbEducation;
+    private MaterialCheckBox cbOther;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -82,7 +86,11 @@ public class AddCompanyActivity extends AppCompatActivity {
         TextInputEditText inputPhone = findViewById(R.id.input_phone);
         TextInputEditText inputWebsite = findViewById(R.id.input_website);
         textLocationCoords = findViewById(R.id.text_location_coords);
-        rgCategories = findViewById(R.id.rg_categories);
+        cbService = findViewById(R.id.cb_cat_service);
+        cbEntertainment = findViewById(R.id.cb_cat_entertainment);
+        cbIndustry = findViewById(R.id.cb_cat_industry);
+        cbEducation = findViewById(R.id.cb_cat_education);
+        cbOther = findViewById(R.id.cb_cat_other);
 
         wireScrollOnFocus(
                 scroll,
@@ -368,12 +376,11 @@ public class AddCompanyActivity extends AppCompatActivity {
     @NonNull
     private List<String> collectCategorySlugs() {
         List<String> out = new ArrayList<>();
-        int id = rgCategories.getCheckedRadioButtonId();
-        if (id == R.id.rb_cat_service) out.add("service");
-        else if (id == R.id.rb_cat_entertainment) out.add("entertainment");
-        else if (id == R.id.rb_cat_industry) out.add("industry");
-        else if (id == R.id.rb_cat_education) out.add("education");
-        else if (id == R.id.rb_cat_other) out.add("other");
+        if (cbService.isChecked()) out.add("service");
+        if (cbEntertainment.isChecked()) out.add("entertainment");
+        if (cbIndustry.isChecked()) out.add("industry");
+        if (cbEducation.isChecked()) out.add("education");
+        if (cbOther.isChecked()) out.add("other");
         return out;
     }
 }

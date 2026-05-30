@@ -287,48 +287,48 @@
                 android:textColor="@color/ink"
                 android:textSize="11sp" />
 
-            <RadioGroup
-                android:id="@+id/rg_categories"
+            <LinearLayout
+                android:id="@+id/group_categories"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:orientation="vertical">
 
-                <com.google.android.material.radiobutton.MaterialRadioButton
-                    android:id="@+id/rb_cat_service"
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/cb_cat_service"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/cat_service"
                     android:textColor="@color/ink" />
 
-                <com.google.android.material.radiobutton.MaterialRadioButton
-                    android:id="@+id/rb_cat_entertainment"
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/cb_cat_entertainment"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/cat_entertainment"
                     android:textColor="@color/ink" />
 
-                <com.google.android.material.radiobutton.MaterialRadioButton
-                    android:id="@+id/rb_cat_industry"
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/cb_cat_industry"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/cat_industry"
                     android:textColor="@color/ink" />
 
-                <com.google.android.material.radiobutton.MaterialRadioButton
-                    android:id="@+id/rb_cat_education"
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/cb_cat_education"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/cat_education"
                     android:textColor="@color/ink" />
 
-                <com.google.android.material.radiobutton.MaterialRadioButton
-                    android:id="@+id/rb_cat_other"
+                <com.google.android.material.checkbox.MaterialCheckBox
+                    android:id="@+id/cb_cat_other"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="@string/cat_other"
                     android:textColor="@color/ink" />
-            </RadioGroup>
+            </LinearLayout>
 
             <Space
                 android:layout_width="match_parent"
