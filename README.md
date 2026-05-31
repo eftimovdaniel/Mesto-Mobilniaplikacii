@@ -8,12 +8,10 @@
 
 ## Структура на проектот (код)
 
-| Дел | Папка / име | Што е |
-|-----|-------------|--------|
-| Android апликација | `app/` | Клиентот што го гледа корисникот |
-| Backend API | `backend/` | Мојот REST сервис `mesto-api` |
-| Шема на база | `supabase/schema.sql` | SQL за Supabase табелата `companies` |
-| Деплој на Render | `render.yaml` (во root и во `backend/`) | Blueprint за сервисот `mesto-api` |
+- **Android апликација** — во `app/`. Клиентот што го гледа корисникот.
+- **Backend API** — во `backend/`. Мојот REST сервис `mesto-api`.
+- **Шема на база** — `supabase/schema.sql`. SQL за Supabase табелата `companies`.
+- **Деплој на Render** — `render.yaml` (во root и во `backend/`). Blueprint за сервисот `mesto-api`.
 
 **Android**
 - Име на апликацијата: **Место**
@@ -104,22 +102,3 @@ Android (Retrofit)  →  mesto-api (Render, Express)  →  Supabase (Postgres)
 | DELETE | `/companies/:id` | Бришење на компанија по `id` |
 
 Повеќе за деплој: [`backend/README.md`](backend/README.md).
-
----
-
-## Локално пуштање
-
-1. `local.properties` (од `local.properties.example`):
-   - `sdk.dir` — Android SDK
-   - `backend.url` — `http://10.0.2.2:3000` (емулатор) или Render URL
-2. Backend:
-   ```bash
-   cd backend
-   cp .env.example .env
-   # во .env: DATABASE_URL=<Supabase URI>
-   npm install
-   npm start
-   ```
-3. Android Studio → Run на емулатор или телефон.
-
-`local.properties`, `backend/.env` и лозинките за Supabase **не** се комитираат на Git.
