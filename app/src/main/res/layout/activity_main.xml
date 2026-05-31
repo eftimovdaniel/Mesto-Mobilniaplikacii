@@ -16,14 +16,34 @@
         android:background="@color/cream"
         android:elevation="0dp">
 
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:fontFamily="serif"
-            android:text="@string/brand_mesto"
-            android:textColor="@color/ink"
-            android:textSize="26sp" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="@drawable/bg_toolbar_m_badge"
+                android:contentDescription="@string/app_name"
+                android:fontFamily="serif"
+                android:gravity="center"
+                android:text="M"
+                android:textColor="@color/cream"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:fontFamily="serif"
+                android:text="@string/brand_mesto"
+                android:textColor="@color/ink"
+                android:textSize="26sp" />
+        </LinearLayout>
     </com.google.android.material.appbar.MaterialToolbar>
 
     <com.google.android.material.tabs.TabLayout
