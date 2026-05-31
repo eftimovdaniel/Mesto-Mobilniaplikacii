@@ -101,4 +101,3 @@ Android (Retrofit)  →  mesto-api (Render, Express)  →  Supabase (Postgres)
 | POST | `/companies` | Нова компанија (JSON body) |
 | DELETE | `/companies/:id` | Бришење на компанија по `id` |
 
-Повеќе за деплој: [`backend/README.md`](backend/README.md).
