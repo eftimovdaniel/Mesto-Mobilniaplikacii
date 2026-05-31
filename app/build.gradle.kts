@@ -60,6 +60,23 @@ android {
     }
 }
 
+// AGP 9.x ги отстрани легаси агрегатните task-ови `unitTestClasses` и
+// `androidTestClasses`, но Android Studio "Make Module" сè уште ги повикува.
+// За да не пука билдот, ги регистрираме како тенки wrapper-и што делегираат на
+// еквивалентните per-variant compile task-ови (или се no-op ако ги нема).
+afterEvaluate {
+    if (tasks.findByName("unitTestClasses") == null) {
+        tasks.register("unitTestClasses") {
+            dependsOn(tasks.matching { it.name.endsWith("UnitTestClasses") })
+        }
+    }
+    if (tasks.findByName("androidTestClasses") == null) {
+        tasks.register("androidTestClasses") {
+            dependsOn(tasks.matching { it.name.endsWith("AndroidTestClasses") })
+        }
+    }
+}
+
 dependencies {
     implementation(libs.activity.ktx)
     implementation(libs.appcompat)

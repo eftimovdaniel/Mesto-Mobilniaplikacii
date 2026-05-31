@@ -58,4 +58,11 @@
     <string name="detail_no_address">Нема адреса</string>
     <string name="detail_no_app">Нема апликација за оваа акција.</string>
     <string name="detail_pick_app">Избери апликација</string>
+    <string name="delete_cd">Избриши компанија</string>
+    <string name="delete_dialog_title">Бришење на компанија</string>
+    <string name="delete_dialog_message">Дали сте сигурни дека сакате да ја избришете „%s“? Оваа акција не може да се врати.</string>
+    <string name="delete_confirm">Избриши</string>
+    <string name="delete_cancel">Откажи</string>
+    <string name="delete_success">„%s“ е избришана.</string>
+    <string name="delete_failed">Бришењето не успеа. Обидете се повторно.</string>
 </resources>

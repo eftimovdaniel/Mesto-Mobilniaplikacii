@@ -3,6 +3,8 @@ package com.example.mesto_samostojna.api;
 import com.example.mesto_samostojna.BuildConfig;
 import com.google.gson.Gson;
 
+import java.util.concurrent.TimeUnit;
+
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
@@ -35,8 +37,17 @@ public final class ApiClient {
                     HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
                     logging.setLevel(HttpLoggingInterceptor.Level.BASIC);
 
+                    // Render free план „заспива" по 15 мин — првиот повик потоа
+                    // трае ~15–30 s. Стандардниот OkHttp timeout е 10 s, па
+                    // зголемуваме за да не паѓа на cold start.
                     OkHttpClient ok =
-                            new OkHttpClient.Builder().addInterceptor(logging).build();
+                            new OkHttpClient.Builder()
+                                    .addInterceptor(logging)
+                                    .connectTimeout(45, TimeUnit.SECONDS)
+                                    .readTimeout(45, TimeUnit.SECONDS)
+                                    .writeTimeout(45, TimeUnit.SECONDS)
+                                    .callTimeout(60, TimeUnit.SECONDS)
+                                    .build();
 
                     Retrofit retrofit =
                             new Retrofit.Builder()

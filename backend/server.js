@@ -150,6 +150,26 @@ app.post("/companies", async (req, res) => {
   }
 });
 
+app.delete("/companies/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    return res.status(400).json({ error: "invalid_id" });
+  }
+  try {
+    const { rowCount } = await pool.query(
+      "DELETE FROM companies WHERE id = $1",
+      [id]
+    );
+    if (rowCount === 0) {
+      return res.status(404).json({ error: "not_found" });
+    }
+    res.status(204).end();
+  } catch (e) {
+    console.error("DELETE /companies failed:", e.code, e.message);
+    res.status(500).json({ error: "database_error", code: e.code, detail: e.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`mesto API слуша на http://localhost:${PORT}`);
 });

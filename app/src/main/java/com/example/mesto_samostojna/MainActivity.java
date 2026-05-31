@@ -354,6 +354,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    /** Public reload — се повикува од фрагменти (на пр. по бришење на компанија). */
+    public void reloadCompanies() {
+        loadCompanies();
+    }
+
     private void loadCompanies() {
         MestoApi api = ApiClient.getApi();
         api.listCompanies()
