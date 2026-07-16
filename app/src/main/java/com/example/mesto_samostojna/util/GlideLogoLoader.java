@@ -21,26 +21,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Helper за лoгa на компанија:
- *   1) ако имаме keширан og:image (од website-от) – го користи него (профил-сликата на IG/FB и сл.)
- *   2) async fetch на og:image; чим стигне → го применуваме на истиот ImageView
- *   3) fallback chain: Google S2 favicon → DuckDuckGo → локален placeholder
+ * Helper za logo na kompanija (Glide).
+ *
+ * ZOSO fallback chain: ne site kompanii imaat image_url — seuste sakame ikona.
+ * KAKO RABOTI (prioritet):
+ *   1) imageUrl od korisnikot (ako e vnesen)
+ *   2) kesiran og:image od website (profil slika IG/FB itd.)
+ *   3) async fetch og:image → apply na istiot ImageView
+ *   4) Google S2 favicon → DuckDuckGo → lokalen placeholder
  */
 public final class GlideLogoLoader {
 
     private static final String TAG = "GlideLogoLoader";
-    private static final int TAG_WEBSITE = R.id.row_icon; // користиме postoeчki id како tag-key
+    private static final int TAG_WEBSITE = R.id.row_icon; // postoecki id kako tag-key
 
     private GlideLogoLoader() {}
 
-    /** Зачувано за компатибилност (само website). */
+    /** Kompatibilnost: samo website (bez imageUrl). */
     public static void load(ImageView target, @Nullable String website) {
         load(target, null, website);
     }
 
     /**
-     * Прв приоритет е `imageUrl` (рачно внесен од корисникот). Ако е празен → og:image
-     * од website-от → favicon fallback → локален placeholder.
+     * Prv prioritet: imageUrl. Ako e prazen → og:image od website → favicon → placeholder.
      */
     public static void load(
             ImageView target, @Nullable String imageUrl, @Nullable String website) {
@@ -59,7 +62,7 @@ public final class GlideLogoLoader {
 
         applyChain(target, null, LogoUrls.candidatesFor(website));
 
-        if (TextUtils.isEmpty(website) || cachedOg != null /* keширано "" = негативно */) {
+        if (TextUtils.isEmpty(website) || cachedOg != null /* kesirano "" = negativno */) {
             return;
         }
 

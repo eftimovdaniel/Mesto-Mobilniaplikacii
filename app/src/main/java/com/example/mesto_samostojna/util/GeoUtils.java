@@ -1,12 +1,19 @@
 package com.example.mesto_samostojna.util;
 
-/** Haversine oddalečenost megju dve WGS84 točki vo metri. */
+/**
+ * Pomoshna klasa za geo-presmetki.
+ *
+ * ZOSO Haversine: GPS dava lat/lng (WGS84); treba rastojanie vo metri
+ * za da proverime dali korisnikot e pod 50 m od kompanija (Toast / geofence).
+ * Dobra za mali rastojanija (grad / lokalen biznis), bez Maps SDK.
+ */
 public final class GeoUtils {
 
-    private static final double EARTH_RADIUS_M = 6_371_000.0;
+    private static final double EARTH_RADIUS_M = 6_371_000.0; // sreden radius na Zemjata
 
     private GeoUtils() {}
 
+    /** Vraka rastojanie vo metri megju (lat1,lon1) i (lat2,lon2). */
     public static double distanceMeters(double lat1, double lon1, double lat2, double lon2) {
         double dLat = Math.toRadians(lat2 - lat1);
         double dLon = Math.toRadians(lon2 - lon1);

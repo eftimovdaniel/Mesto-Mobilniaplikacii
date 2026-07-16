@@ -17,10 +17,16 @@ import com.example.mesto_samostojna.util.GlideLogoLoader;
 import java.util.ArrayList;
 import java.util.List;
 
-/** ListView adapter: ikona levo, naziv / adresa / tel / veb + kopche za brisenje desno. */
+/**
+ * ListView adapter za eden red kompanija.
+ *
+ * ZOSO BaseAdapter: custom red (item_company_row) so ikona, tekst i kanta.
+ * KAKO RABOTI: getView() polni Glide logo + ime/adresa/tel/web;
+ * kanta desno → OnDeleteClickListener (fragment: AlertDialog + DELETE).
+ */
 public class CompanyRowAdapter extends BaseAdapter {
 
-    /** Callback za "brisi" — fragmento gi pokaza AlertDialog i go izvika API-to. */
+    /** Callback za brisenje — fragmentot pokazuva dialog i go povikuva API-to. */
     public interface OnDeleteClickListener {
         void onDeleteClick(Company company);
     }
@@ -38,6 +44,10 @@ public class CompanyRowAdapter extends BaseAdapter {
         this.deleteListener = listener;
     }
 
+    /**
+     * Ja zamenuva celata lista i go izvestuva ListView da se prerisuva.
+     * notifyDataSetChanged() e klucen — bez nego UI nema da se osvezi.
+     */
     public void setItems(List<Company> companies) {
         items.clear();
         if (companies != null) {
@@ -62,6 +72,13 @@ public class CompanyRowAdapter extends BaseAdapter {
         return c.getId() != null ? c.getId() : position;
     }
 
+    /**
+     * Gradi/reciklira eden red od listata.
+     *
+     * ZOSO proverka `convertView == null`: ListView gi reciklira izminatite
+     * redovi (scroll performansi) — inflate pravime samo koga nema gotov view,
+     * inaku samo go polnime postoeckiot so novi podatoci.
+     */
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         View row = convertView;

@@ -50,9 +50,20 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
- * Бизнис директориум: табови, листа, пребарување по тековна категорија,
- * Toast при < 50 m додека апликацијата е отворена + geofence нотификации
- * како резерва кога апликацијата е во background.
+ * Glaven ekran na aplikacijata "Mesto" (biznis direktorium).
+ *
+ * ZOSO ovaka:
+ * - Podatocite se cuvaat vo MainActivity (ednas), a tabovite samo filtriraat —
+ *   ne pravat poseben API call po tab (pobrzo, pomalku mreza).
+ * - Search e lokalen (po ime) — sekoe bukva ne praka nov HTTP request.
+ * - Toast (&lt; 50 m) vo foreground + Geofence vo background — zadacata bara
+ *   izvestuvanje i koga app e otvorena i koga e vo pozadina.
+ *
+ * KAKO RABOTI:
+ * 1) onCreate: TabLayout + ViewPager2 (5 CompanyListFragment), search listener.
+ * 2) loadCompanies(): Retrofit GET /companies → lista + syncGeofences().
+ * 3) onResume: FusedLocation updates; Haversine; Toast so 60 s cooldown.
+ * 4) onPause: stop location updates (baterija).
  */
 public class MainActivity extends AppCompatActivity {
 
@@ -76,9 +87,9 @@ public class MainActivity extends AppCompatActivity {
     private TabLayout tabs;
     private ViewPager2 pager;
 
-    /** Foreground location tracking — Toast при < 50 m додека апликацијата е отворена. */
+    /** Radius za Toast dokolku app e vo foreground (baranje od zadacata: pod 50 m). */
     private static final float PROXIMITY_RADIUS_M = 50f;
-    /** Истата компанија да не спам-а Toast: пауза од 60 s меѓу пораки. */
+    /** Ista kompanija da ne spam-a Toast — pauza 60 s megju poraki. */
     private static final long PROXIMITY_TOAST_COOLDOWN_MS = 60_000L;
     private FusedLocationProviderClient fusedLocationClient;
     private final Map<Long, Long> lastToastByCompanyId = new HashMap<>();
@@ -175,6 +186,7 @@ public class MainActivity extends AppCompatActivity {
         maybeRequestPermissions();
     }
 
+    /** Toolbar: "+" otvora AddCompanyActivity; po RESULT_OK se povikuva loadCompanies(). */
     private boolean onToolbarMenuItemClick(MenuItem item) {
         if (item.getItemId() == R.id.action_add_company) {
             addCompanyLauncher.launch(new Intent(this, AddCompanyActivity.class));
@@ -183,15 +195,21 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
+    /**
+     * Barame dozvoli samo ako nedostasuvaat (ne spam-ame dialog).
+     * Redosled: foreground location → background location (Android 10+) → notifications (13+).
+     */
     private void maybeRequestPermissions() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                         == PackageManager.PERMISSION_GRANTED
                 || ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
                         == PackageManager.PERMISSION_GRANTED) {
+            // Veke ima location — prodolzi so background + notifications
             requestBackgroundLocationIfNeeded();
             requestNotificationPermissionIfNeeded();
             return;
         }
+        // Prv dialog: fine/coarse — potreben za Toast i za geofence
         requestLocationLauncher.launch(
                 new String[] {
                     Manifest.permission.ACCESS_FINE_LOCATION,
@@ -199,6 +217,10 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * Od Android 10 (Q) geofence vo background bara ACCESS_BACKGROUND_LOCATION.
+     * Na pomali verzii dovolno e fine/coarse — odmah registriraj geofences.
+     */
     private void requestBackgroundLocationIfNeeded() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             registerGeofencesForLoadedCompanies();
@@ -209,6 +231,7 @@ public class MainActivity extends AppCompatActivity {
             registerGeofencesForLoadedCompanies();
             return;
         }
+        // Bez fine location ne moze da barame background
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             return;
@@ -216,6 +239,10 @@ public class MainActivity extends AppCompatActivity {
         requestBackgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
     }
 
+    /**
+     * Od Android 13 (Tiramisu) notifikaciite baraat POST_NOTIFICATIONS.
+     * Bez ova ProximityNotifier.showEnter() nema da prikaze nisto.
+     */
     private void requestNotificationPermissionIfNeeded() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             registerGeofencesForLoadedCompanies();
@@ -229,18 +256,21 @@ public class MainActivity extends AppCompatActivity {
         requestNotificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
     }
 
+    /** Registrira/osvezuva geofences samo ako veke ima vcitana lista kompanii. */
     private void registerGeofencesForLoadedCompanies() {
         if (!companies.isEmpty()) {
             GeofenceManager.syncGeofences(this, new ArrayList<>(companies));
         }
     }
 
+    /** Ekranot e aktiven → vkluci foreground proximity (Toast). */
     @Override
     protected void onResume() {
         super.onResume();
         startProximityUpdates();
     }
 
+    /** Ekranot ne e aktiven → iskluci updates (baterija); geofence ostanuva vo OS. */
     @Override
     protected void onPause() {
         super.onPause();
@@ -248,8 +278,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Запишува foreground location updates кога ќе има permission. Без overload на батерија:
-     * интервал 5 s, минимум поместување 5 m, balanced power.
+     * Zapisuva foreground location updates (samo koga ima permission).
+     * ZOSO na onResume/onPause: ne troshi baterija koga ekranot ne e aktiven.
+     * Interval ~5 s — dovolno cesto za 50 m zona, bez preteruvanje.
      */
     private void startProximityUpdates() {
         if (fusedLocationClient == null) {
@@ -268,7 +299,7 @@ public class MainActivity extends AppCompatActivity {
                         .setMinUpdateIntervalMillis(2_000L)
                         .build();
         fusedLocationClient.requestLocationUpdates(request, proximityCallback, getMainLooper());
-        // Иницијална проверка со последната позната локација (без чекање на нов update).
+        // Inicijalna proverka so poslednata poznata lokacija (bez cekanje nov update).
         try {
             fusedLocationClient
                     .getLastLocation()
@@ -280,7 +311,7 @@ public class MainActivity extends AppCompatActivity {
                                 }
                             });
         } catch (SecurityException ignored) {
-            // permission може да биде одземен помеѓу check и call — игнорирај.
+            // permission moze da bide odzemen megju check i call — ignoriraj.
         }
     }
 
@@ -291,8 +322,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Кога ќе пристигне нова локација: за секоја компанија пресмета Haversine растојание;
-     * ако е под 50 m и не е прикажан Toast за неа во последните 60 s — прикажи Toast.
+     * Nova lokacija pristigna: za sekoja kompanija Haversine rastojanie.
+     * Ako e pod 50 m i nema Toast za nea vo poslednite 60 s → prikazi Toast.
+     * Vakva logika e vo Activity (foreground); background go pokriva GeofenceReceiver.
      */
     private void onLocationUpdate(double lat, double lng) {
         if (companies.isEmpty()) {
@@ -323,8 +355,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * Враќа компании за дадена категорија, дополнително филтрирано по тековното
-     * пребарување (по наслов на компанија — case-insensitive).
+     * Lista za daden tab: samo kompanii so toj category slug,
+     * plus lokalen filter po searchQuery (case-insensitive po ime).
+     * Fragmentite ja povikuvaat ovaa metoda — ne drzat sopstvena kopija od site podatoci.
      */
     public List<Company> getCompaniesForCategory(String slug) {
         String q = searchQuery.trim().toLowerCase(Locale.getDefault());
@@ -354,11 +387,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /** Public reload — се повикува од фрагменти (на пр. по бришење на компанија). */
+    /** Public reload — fragmentite ja povikuvaat posle DELETE za da se osvezi listata. */
     public void reloadCompanies() {
         loadCompanies();
     }
 
+    /**
+     * Asinhron GET /companies. Pri uspeh: polni listata, registrira geofences,
+     * i gi izvestuva fragmentite. Pri greska: Toast + prazna lista.
+     */
     private void loadCompanies() {
         MestoApi api = ApiClient.getApi();
         api.listCompanies()

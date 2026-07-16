@@ -10,7 +10,15 @@ import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-/** Retrofit кон mesto backend (Render). Base URL од local.properties → BuildConfig. */
+/**
+ * Singleton Retrofit klient kon mesto backend (Render).
+ *
+ * Zosto:
+ * - Base URL od local.properties → BuildConfig (ne e hardkodiran; ne odi na Git).
+ * - Dolgi timeouti: Render free "zaspiva" po ~15 min; prv request moze da trae 15–30 s.
+ *   Default OkHttp (10 s) bi padnal na cold start — zatoa 45–60 s.
+ * - volatile + synchronized: bezbedno kreiranje od poveke threads.
+ */
 public final class ApiClient {
 
     private static volatile MestoApi api;
@@ -22,24 +30,20 @@ public final class ApiClient {
         if (api == null) {
             synchronized (ApiClient.class) {
                 if (api == null) {
-                    // BACKEND_URL е compile-time constant (buildConfigField од local.properties).
-                    // Проверките подолу служат како runtime safety net ако некој
-                    // build-а без поставен backend.url; lint warnings се очекувани.
+                    // BACKEND_URL = compile-time constant od local.properties (buildConfigField).
                     String baseUrl = BuildConfig.BACKEND_URL;
                     if (baseUrl == null || baseUrl.isEmpty()) {
                         throw new IllegalStateException(
-                                "Во local.properties стави backend.url=https://<твој-render-url>");
+                                "Vo local.properties stavi backend.url=https://<tvoj-render-url>");
                     }
                     if (!baseUrl.endsWith("/")) {
-                        baseUrl = baseUrl + "/";
+                        baseUrl = baseUrl + "/"; // Retrofit bara trailing slash
                     }
 
                     HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
                     logging.setLevel(HttpLoggingInterceptor.Level.BASIC);
 
-                    // Render free план „заспива" по 15 мин — првиот повик потоа
-                    // трае ~15–30 s. Стандардниот OkHttp timeout е 10 s, па
-                    // зголемуваме за да не паѓа на cold start.
+                    // Pogolemi timeouti poradi Render cold start (free plan).
                     OkHttpClient ok =
                             new OkHttpClient.Builder()
                                     .addInterceptor(logging)

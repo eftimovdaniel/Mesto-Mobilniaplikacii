@@ -1,9 +1,20 @@
 /**
- * mesto REST API: Express + Postgres (Supabase).
- * Start: npm install && npm start (чита .env од backend директориум).
- * Env:
- *   PORT (по default 3000)
- *   DATABASE_URL = postgresql://postgres.<ref>:<password>@<host>:6543/postgres?sslmode=require
+ * mesto-api — REST backend za Android aplikacijata "Mesto".
+ *
+ * ZOSO E ODDELEN BACKEND?
+ * Android-ot NE se povrzuva direktno so Supabase. Site podatoci odat
+ * preku ovoj API. Taka: API klucot / DATABASE_URL ne e vo APK-to,
+ * a logikata (validacija, SQL) e na edno mesto.
+ *
+ * KAKO RABOTI TEKOT:
+ *   Android (Retrofit)  →  mesto-api (Express)  →  Supabase Postgres (tabela companies)
+ *
+ * Stack: Node.js + Express + pg
+ * Start: npm install && npm start (od folderot backend/)
+ *
+ * Env (.env):
+ *   PORT         — porta (default 3000; na Render doagja avtomatski)
+ *   DATABASE_URL — connection string od Supabase (Transaction pooler)
  */
 require("dotenv").config();
 const express = require("express");
@@ -14,12 +25,16 @@ const PORT = Number(process.env.PORT || 3000);
 const DATABASE_URL = process.env.DATABASE_URL;
 
 if (!DATABASE_URL) {
-  console.error("Грешка: треба DATABASE_URL во .env (Supabase → Connect → URI).");
+  console.error("Greska: treba DATABASE_URL vo .env (Supabase → Connect → URI).");
   process.exit(1);
 }
 
-// Supabase pooler враќа self-signed cert; pg по default verify-а кога sslmode е во URL-то.
-// Затоа го отстрануваме sslmode од connection string и SSL го контролираме преку config.
+/**
+ * Gradime config za pg Pool.
+ * ZOSO: Supabase pooler vraka self-signed cert; ako ostane sslmode=require
+ * vo URL-to, pg moze da padne na SSL verify. Zatoa go briseme sslmode
+ * od stringot i SSL go kontrolirame so { rejectUnauthorized: false }.
+ */
 function buildDbConfig(rawUrl) {
   try {
     const url = new URL(rawUrl);
@@ -27,7 +42,7 @@ function buildDbConfig(rawUrl) {
     return {
       connectionString: url.toString(),
       ssl: { rejectUnauthorized: false },
-      max: 5,
+      max: 5, // mali pool — dovolno za student project / free plan
     };
   } catch {
     return {
@@ -40,6 +55,11 @@ function buildDbConfig(rawUrl) {
 
 const pool = new Pool(buildDbConfig(DATABASE_URL));
 
+/**
+ * Eden red od Postgres → cist JSON objekt sto Android go ocekuva.
+ * ZOSO: tipovite od baza (numeric, jsonb) gi pretvorame vo Number / Array
+ * za da Retrofit/Gson bezbedno gi mapira vo Company klasata.
+ */
 function normalizeRow(r) {
   return {
     id: Number(r.id),
@@ -55,6 +75,7 @@ function normalizeRow(r) {
   };
 }
 
+// Pri start proveri dali ima konekcija kon bazata (korisno za debug na Render)
 (async () => {
   try {
     const { rows } = await pool.query("SELECT current_database() as db, current_user as usr");
@@ -65,42 +86,57 @@ function normalizeRow(r) {
 })();
 
 const app = express();
+// CORS: dozvoli HTTP povici od Android / browser (inak browser bi blokiral)
 app.use(cors());
+// JSON body parser: potreben za POST /companies (req.body)
 app.use(express.json());
 
 app.get("/", (_req, res) => {
   res.json({ ok: true, service: "mesto-api", endpoints: ["/health", "/companies"] });
 });
 
+// Health check — Render go koristi za da proveri dali servisot e ziv
 app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
-// GET /companies?category=service&q=name
+/**
+ * GET /companies
+ * Kako raboti: cita od tabela companies, opcionalno filtrira.
+ *   ?category=service  — jsonb @> [slug] (kompanija so taa kategorija)
+ *   ?q=ime             — ILIKE prebaruvanje po name
+ * Android-ot vo ovaa verzija najcesto bara site, a filtrira lokalno po tab/search.
+ */
 app.get("/companies", async (req, res) => {
   try {
+    // Query params od URL: /companies?category=service&q=cafe
     const category = req.query.category;
     const q = req.query.q;
 
+    // Dinamicki WHERE — samo dodavame uslovi ako ima filter
     const where = [];
     const params = [];
 
     if (category) {
+      // jsonb @> [slug] — kompanija cii categories go sodrzat toj slug
       params.push(JSON.stringify([String(category)]));
       where.push(`categories @> $${params.length}::jsonb`);
     }
     if (q) {
+      // ILIKE = case-insensitive LIKE (npr. %cafe% najduva "Cafe Bar")
       params.push(`%${String(q)}%`);
       where.push(`name ILIKE $${params.length}`);
     }
 
+    // $1, $2... = parametriziran SQL (NE string concat) → zashtita od SQL injection
     const sql =
       "SELECT id, name, address, latitude, longitude, email, phone, website, image_url, categories " +
       "FROM companies" +
       (where.length ? ` WHERE ${where.join(" AND ")}` : "") +
-      " ORDER BY id DESC";
+      " ORDER BY id DESC"; // najnovite prvi
 
     const { rows } = await pool.query(sql, params);
+    // normalizeRow: tipovi (numeric/jsonb) → Number/Array za Android/Gson
     res.json(rows.map(normalizeRow));
   } catch (e) {
     console.error("GET /companies failed:", e.code, e.message);
@@ -108,6 +144,13 @@ app.get("/companies", async (req, res) => {
   }
 });
 
+/**
+ * POST /companies
+ * Kako raboti: validira body, pa INSERT vo Supabase.
+ * Zadolzitelni: name, address, latitude, longitude, phone, categories[].
+ * email/website se opcionalni (prazni stringovi ako nedostasuvaat).
+ * Vraka 201 + noviot red — Android go koristi za da ja osvezi listata.
+ */
 app.post("/companies", async (req, res) => {
   const b = req.body || {};
   const required = ["name", "address", "latitude", "longitude", "phone"];
@@ -116,7 +159,6 @@ app.post("/companies", async (req, res) => {
       return res.status(400).json({ error: "missing_" + k });
     }
   }
-  // email и website се опционални
   if (b.email === undefined || b.email === null) b.email = "";
   if (b.website === undefined || b.website === null) b.website = "";
 
@@ -126,6 +168,7 @@ app.post("/companies", async (req, res) => {
   }
 
   try {
+    // $1..$9 + jsonb za categories — bez slepuvanje stringovi vo SQL
     const sql =
       "INSERT INTO companies " +
       "(name, address, latitude, longitude, email, phone, website, image_url, categories) " +
@@ -143,13 +186,18 @@ app.post("/companies", async (req, res) => {
       JSON.stringify(cats.map(String)),
     ];
     const { rows } = await pool.query(sql, params);
-    res.status(201).json(normalizeRow(rows[0]));
+    res.status(201).json(normalizeRow(rows[0])); // 201 = Created
   } catch (e) {
     console.error("POST /companies failed:", e.code, e.message);
     res.status(500).json({ error: "database_error", code: e.code, detail: e.message });
   }
 });
 
+/**
+ * DELETE /companies/:id
+ * Kako raboti: brise red po id. 204 = uspesno bez body; 404 = ne postoi.
+ * Se povikuva od Android koga korisnikot potvrdi brisenje vo AlertDialog.
+ */
 app.delete("/companies/:id", async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
@@ -171,5 +219,5 @@ app.delete("/companies/:id", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`mesto API слуша на http://localhost:${PORT}`);
+  console.log(`mesto API slusa na http://localhost:${PORT}`);
 });

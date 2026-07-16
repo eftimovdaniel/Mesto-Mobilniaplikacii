@@ -33,12 +33,21 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 /**
- * Forma "Nova kompanija": validacija, opcionalno geokodiranje od adresa, POST kon API.
- * Po uspen odgovor: {@link #setResult(int)} i {@link #finish()} za da se osvezi listata vo MainActivity.
+ * Ekran "Nova kompanija".
+ *
+ * ZOSO:
+ * - Validacija pred POST — da ne prakame nevalidni podatoci kon API/baza.
+ * - Geocoder: korisnikot ne mora racno da vnesuva lat/lng.
+ * - setResult(OK)+finish: MainActivity znae da ja osvezi listata.
+ *
+ * KAKO RABOTI:
+ * 1) Forma: ime, adresa, tel, (opc.) email/web, kategorii, lat/lng.
+ * 2) "Najdi lokacija": Geocoder na Executor (UI ne zamrznuva).
+ * 3) Zachuvaj: POST /companies → RESULT_OK → MainActivity.loadCompanies().
  */
 public class AddCompanyActivity extends AppCompatActivity {
 
-    // Geocoder ne smee na glavnata niska — raboti ovde so Executor.
+    // Geocoder = IO; ne smee na UI thread. Executor = pozadinska niska.
     private final ExecutorService geocodeExecutor = Executors.newSingleThreadExecutor();
 
     private MaterialButton btnSave;
@@ -137,7 +146,14 @@ public class AddCompanyActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
-    /** Od tekst na adresa gi popolnuva lat/lng (ako Geocoder vrati rezultat). */
+    /**
+     * Od tekst na adresa gi popolnuva lat/lng.
+     *
+     * ZOSO na Executor: Geocoder pravi mreza/IO — na UI thread bi zamrznal ekranot.
+     * ZOSO ", North Macedonia": bez zemja Geocoder cesto vraka pogresen grad
+     * (isti iminja na ulici postojat i vo drugi drzavi).
+     * runOnUiThread: samo UI update (setText, Toast) od pozadinskata niska.
+     */
     private void geocodeFromAddress() {
         tilAddress.setError(null);
         String raw = textOf(inputAddress).trim();
@@ -150,23 +166,26 @@ public class AddCompanyActivity extends AppCompatActivity {
             return;
         }
 
-        // Bez zemja vo tekstot dodava kontekst za podobra tocnost na geocoder.
+        // Ako adresata vekje sodrzi "Makedonija"/"Macedonia" — ne dodavaj nisto.
+        // Inaku dodaj ", North Macedonia" za potocen rezultat.
         final String query =
                 raw.toLowerCase(Locale.ROOT).contains("македони")
                         || raw.toLowerCase(Locale.ROOT).contains("macedon")
                         ? raw
                         : raw + ", North Macedonia";
 
-        btnFindLocation.setEnabled(false);
+        btnFindLocation.setEnabled(false); // spreci dvojen tap dodeka bara
         geocodeExecutor.execute(
                 () -> {
                     try {
                         List<Address> addresses = lookupAddresses(query);
+                        // Nazad na UI thread — setText/Toast ne smee od background
                         runOnUiThread(
                                 () -> {
                                     btnFindLocation.setEnabled(true);
                                     if (addresses != null && !addresses.isEmpty()) {
                                         Address first = addresses.get(0);
+                                        // Locale.US: decimalna tocka (ne zapirka) za parseCoord
                                         inputLatitude.setText(
                                                 String.format(
                                                         Locale.US,
@@ -205,13 +224,17 @@ public class AddCompanyActivity extends AppCompatActivity {
                 });
     }
 
+    /** Max 5 rezultati; zemame go prviot (najrelevanten). */
     @SuppressLint("deprecation")
     private List<Address> lookupAddresses(String query) throws IOException {
         Geocoder geocoder = new Geocoder(this, Locale.getDefault());
         return geocoder.getFromLocationName(query, 5);
     }
 
-    /** Pokazuva lat/lng so N/S/E/W pod poleinjata (ako koordinatite se validni). */
+    /**
+     * Ziv preview pod "Lokacija": 41.1234° N 22.5678° E.
+     * ZOSO: korisnikot odmah gleda dali koordinatite imaat smisla.
+     */
     private void updateLocationPreview() {
         String latStr = textOf(inputLatitude);
         String lngStr = textOf(inputLongitude);
@@ -272,7 +295,13 @@ public class AddCompanyActivity extends AppCompatActivity {
         }
     }
 
-    /** Forma validacija + POST /companies; pri uspeh RESULT_OK i finish(). */
+    /**
+     * Validacija na forma + POST /companies.
+     *
+     * ZOSO lokalna validacija pred mreza: pobrz feedback, pomalku losi requesti.
+     * KAKO: ako OK → Company objekt → Retrofit POST → RESULT_OK + finish()
+     * za MainActivity da ja osvezi listata.
+     */
     private void attemptSave() {
         clearErrors();
 

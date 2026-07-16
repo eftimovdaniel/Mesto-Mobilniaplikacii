@@ -23,12 +23,12 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 /**
- * Извлекува „вистинска" слика на бизнисот од website-от, со приоритет:
- *   1. <meta property="og:image" content="..."> (и og:image:secure_url)
- *   2. <meta name="twitter:image" content="...">
- *   3. <link rel="apple-touch-icon" href="..."> (обично 180×180+, висок квалитет)
- *   4. <link rel="icon" href="..."> / <link rel="shortcut icon" ...>
- * Кешира резултати во SharedPreferences (TTL 1 ден ако најден, 30 мин ако не е).
+ * Izvlekuva "vistinska" slika na biznisot od website HTML.
+ *
+ * ZOSO: favicon e mal; og:image e podobar (profil/cover od sajt).
+ * Prioritet: og:image → twitter:image → apple-touch-icon → link rel=icon.
+ * Kesira vo SharedPreferences (TTL 1 den hit / 30 min miss) — da ne se
+ * downloada HTML za sekoj red vo listata.
  */
 public final class OgImageResolver {
 
@@ -75,7 +75,7 @@ public final class OgImageResolver {
 
     private OgImageResolver() {}
 
-    /** null = немаме информација уште. "" = знаеме дека нема (negative cache). */
+    /** null = nemame info uste. "" = znaeme deka nema (negative cache). */
     @Nullable
     public static String cachedFor(Context ctx, String website) {
         if (TextUtils.isEmpty(website)) {
@@ -92,6 +92,15 @@ public final class OgImageResolver {
         return cached;
     }
 
+    /**
+     * Asinhrono go simnuva HTML-ot na sajtot i bara najdobra slika.
+     *
+     * ZOSO async (OkHttp enqueue): mreza ne smee na UI thread. Rezultatot se
+     * vraka preku Callback2, sekogas na main thread (vidi postMain), za da moze
+     * bezbedno da se setira na ImageView.
+     * KAKO: gradi Request so lazen "brauzerski" User-Agent (nekoi sajtovi
+     * blokiraat nepoznati klienti), go cita HTML-ot, parsira, i kesira rezultat.
+     */
     public static void resolve(Context ctx, String website, Callback2 cb) {
         if (TextUtils.isEmpty(website)) {
             cb.onResolved(null);
@@ -140,6 +149,14 @@ public final class OgImageResolver {
                         });
     }
 
+    /**
+     * Cita samo del od HTML-ot (do MAX_BYTES = 256 KB).
+     *
+     * ZOSO delumno citanje: og:image/meta tagovite se vo <head> (pocetokot na
+     * stranata) — nema potreba da simnuvame cela golema stranica. Cim najdeme
+     * meta-image tag (po prvite ~32 KB), prekinuvame i vrakame — pobrzo i
+     * pomalku podatoci.
+     */
     @WorkerThread
     private static String readPartial(ResponseBody body) throws IOException {
         byte[] buf = new byte[MAX_BYTES];
@@ -148,6 +165,7 @@ public final class OgImageResolver {
         var src = body.byteStream();
         while (total < MAX_BYTES && (n = src.read(buf, total, MAX_BYTES - total)) != -1) {
             total += n;
+            // Rano izleguvanje: cim ima dovolno pročitano i najdovme tag, stop.
             if (total > 32 * 1024) {
                 String s = new String(buf, 0, total, java.nio.charset.StandardCharsets.UTF_8);
                 if (META_IMAGE.matcher(s).find()) {
@@ -158,6 +176,12 @@ public final class OgImageResolver {
         return new String(buf, 0, total, java.nio.charset.StandardCharsets.UTF_8);
     }
 
+    /**
+     * Bara slika vo HTML-ot po prioritet: og:image/twitter:image → apple-touch
+     * -icon → &lt;link rel="icon"&gt;. Prviot pogoden se vraka kako apsoluten URL.
+     * ZOSO ovoj redosled: og:image e najkvaliteten (cover/profil), ikonite se
+     * rezerva koga sajtot nema social meta tagovi.
+     */
     @Nullable
     private static String parseImage(String html, String baseUrl) {
         // 1. og:image / twitter:image
@@ -193,7 +217,7 @@ public final class OgImageResolver {
         return null;
     }
 
-    /** Дефолтни placeholder favicon-и што да ги игнорираме. */
+    /** Default placeholder favicon-i sto da gi ignorirame. */
     private static boolean isGenericFavicon(String url) {
         String low = url.toLowerCase(java.util.Locale.US);
         return low.endsWith("/vite.svg")
@@ -204,14 +228,23 @@ public final class OgImageResolver {
                 || low.contains("/wp-content/themes/twenty");
     }
 
+    /**
+     * Pretvora bilo kakov URL od HTML (relativen, "//", "/path", cel) vo
+     * apsoluten URL sto Glide moze da go simne.
+     *
+     * ZOSO: content/href atributite cesto se relativni (npr. "/img/logo.png") —
+     * bez base domen nemaat smisla. Isto taka gi otfrla data: URI i genericki
+     * placeholder favicon-i (nema vrednost da gi prikazuvame).
+     */
     @Nullable
     private static String absolutize(@Nullable String raw, String baseUrl) {
         if (raw == null || raw.isEmpty()) return null;
-        String s = raw.replace("&amp;", "&").trim();
-        if (s.startsWith("data:")) return null;
-        if (isGenericFavicon(s)) return null;
-        if (s.startsWith("//")) return "https:" + s;
+        String s = raw.replace("&amp;", "&").trim(); // dekodiraj HTML-escaped &
+        if (s.startsWith("data:")) return null;      // inline base64 — preskoci
+        if (isGenericFavicon(s)) return null;        // default ikona — bez vrednost
+        if (s.startsWith("//")) return "https:" + s; // protocol-relative → https
         if (s.startsWith("/")) {
+            // Apsolutna pateka na istiot host: scheme://host + path
             try {
                 Uri base = Uri.parse(baseUrl);
                 return base.getScheme() + "://" + base.getAuthority() + s;
@@ -222,7 +255,7 @@ public final class OgImageResolver {
         if (s.startsWith("http://") || s.startsWith("https://")) {
             return s;
         }
-        // Релативен URL → join со base.
+        // Relativen URL → join so base.
         try {
             Uri base = Uri.parse(baseUrl);
             String basePath = base.getPath() != null ? base.getPath() : "/";
@@ -234,6 +267,11 @@ public final class OgImageResolver {
         }
     }
 
+    /**
+     * Zapisuva rezultat vo kes zaedno so vremenska oznaka (:ts).
+     * Prazen string "" = negativen kes (znaeme deka nema slika) — sprecuva
+     * povtoreno simnuvanje na sekoe renderiranje na redot.
+     */
     private static void writeCache(Context app, String key, String value) {
         SharedPreferences sp = app.getSharedPreferences(PREFS, 0);
         sp.edit()
@@ -242,11 +280,18 @@ public final class OgImageResolver {
                 .apply();
     }
 
+    /**
+     * Go vraka callback-ot na glavniot (UI) thread.
+     * ZOSO: OkHttp callback-ot rabota na pozadinska niska, a menuvanje na
+     * ImageView smee samo od UI thread — pa prekuHandler(mainLooper) go "frlame"
+     * rezultatot nazad na main thread.
+     */
     private static void postMain(Callback2 cb, @Nullable String url) {
         new android.os.Handler(android.os.Looper.getMainLooper())
                 .post(() -> cb.onResolved(url));
     }
 
+    /** Osiguruva deka website ima scheme i validen host; inaku null. */
     @Nullable
     private static String normalize(String website) {
         try {
@@ -262,6 +307,11 @@ public final class OgImageResolver {
         }
     }
 
+    /**
+     * Klucot za SharedPreferences kes. Prefiksot "v2:" e verzija na kes —
+     * ako se smeni logikata na parsiranje, dovolno e da se smeni prefiksot
+     * za starite (potencijalno pogresni) vnesovi da se ignoriraat.
+     */
     private static String keyFor(String website) {
         return "v2:" + website.trim().toLowerCase(java.util.Locale.US);
     }

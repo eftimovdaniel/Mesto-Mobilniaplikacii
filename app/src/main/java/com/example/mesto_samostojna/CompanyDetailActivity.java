@@ -23,9 +23,21 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-/** Детален преглед на компанија со clickable полиња (тел/мејл/веб/мапа). */
+/**
+ * Detalen pregled na edna kompanija.
+ *
+ * ZOSO clickable polinja: so eden tap otvora mapa/dialer/email/browser
+ * (korisnikot ne mora da kopira broj ili adresa).
+ *
+ * KAKO RABOTI:
+ * - Prima Company preku Intent EXTRA_COMPANY (Serializable).
+ * - Adresa → geo Intent / Google Maps fallback.
+ * - Telefon → ACTION_DIAL; email → mailto; web → browser (+ https:// ako fali).
+ * - Logo: Glide (image_url ili favicon/og:image fallback).
+ */
 public class CompanyDetailActivity extends AppCompatActivity {
 
+    /** Kluch za Intent extra — objektot {@link Company} od listata. */
     public static final String EXTRA_COMPANY = "extra_company";
 
     private static final Map<String, Integer> CATEGORY_LABELS = new HashMap<>();
@@ -97,12 +109,19 @@ public class CompanyDetailActivity extends AppCompatActivity {
         findViewById(R.id.detail_website_row).setOnClickListener(v -> openWeb(c.getWebsite()));
     }
 
+    /** Ako poleto e prazno, prikazi fallback tekst (npr. "Nema telefon"). */
     private String notEmpty(String value, String fallback) {
         return TextUtils.isEmpty(value) ? fallback : value;
     }
 
+    /**
+     * Otvora lokacija vo map app.
+     * Prvo: geo: URI (bilo koja instalirana mapa).
+     * Ako nema app: fallback Google Maps vo browser.
+     */
     private void openMap(Company c) {
         String label = Uri.encode(c.getName() != null ? c.getName() : "");
+        // geo:lat,lng?q=lat,lng(Label) — standarden Android Intent za mapi
         Uri geo = Uri.parse(String.format(
                 Locale.US, "geo:%f,%f?q=%f,%f(%s)",
                 c.getLatitude(), c.getLongitude(),
@@ -111,6 +130,7 @@ public class CompanyDetailActivity extends AppCompatActivity {
         try {
             startActivity(mapIntent);
         } catch (ActivityNotFoundException e) {
+            // Nema map app — otvori vo browser
             Uri web = Uri.parse(String.format(
                     Locale.US,
                     "https://www.google.com/maps/search/?api=1&query=%f,%f",
@@ -119,6 +139,10 @@ public class CompanyDetailActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * ACTION_DIAL (ne CALL) — go otvora dialer-ot so broj, ama ne povikuva avtomatski.
+     * ZOSO: ne bara CALL_PHONE permission.
+     */
     private void dial(String number) {
         if (TextUtils.isEmpty(number)) {
             Toast.makeText(this, R.string.detail_no_phone, Toast.LENGTH_SHORT).show();
@@ -132,6 +156,7 @@ public class CompanyDetailActivity extends AppCompatActivity {
         }
     }
 
+    /** mailto: Intent — korisnikot bira email app (Gmail, Outlook...). */
     private void email(String addr) {
         if (TextUtils.isEmpty(addr)) {
             Toast.makeText(this, R.string.detail_no_email, Toast.LENGTH_SHORT).show();
@@ -145,6 +170,10 @@ public class CompanyDetailActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Otvora website vo browser.
+     * Ako fali http/https — dodavame https:// (inak Intent moze da padne).
+     */
     private void openWeb(String url) {
         if (TextUtils.isEmpty(url)) {
             Toast.makeText(this, R.string.detail_no_website, Toast.LENGTH_SHORT).show();
@@ -157,6 +186,7 @@ public class CompanyDetailActivity extends AppCompatActivity {
         safeView(Uri.parse(normalized), R.string.detail_no_app);
     }
 
+    /** Bezbeden startActivity — ako nema app, Toast namesto crash. */
     private void safeView(Uri uri, int errorRes) {
         Intent view = new Intent(Intent.ACTION_VIEW, uri);
         try {

@@ -24,7 +24,17 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-/** Eden tab: ListView so kompanii za izbranata kategorija + filter od MainActivity. */
+/**
+ * Eden tab vo ViewPager2: ListView so kompanii za izbranata kategorija.
+ *
+ * ZOSO Fragment: site tabovi delat ista lista od MainActivity (edna kopija).
+ * ZOSO AlertDialog pred DELETE: brisenjeto e nepovratno.
+ *
+ * KAKO RABOTI:
+ * - newInstance(slug) → arguments; refreshFromActivity() zema filtrirana lista.
+ * - Tap na red → CompanyDetailActivity.
+ * - Kanta → potvrda → DELETE /companies/:id → reloadCompanies().
+ */
 public class CompanyListFragment extends Fragment {
 
     private static final String ARG_SLUG = "slug";
@@ -72,7 +82,7 @@ public class CompanyListFragment extends Fragment {
         return v;
     }
 
-    /** Pokazuva AlertDialog za potvrda, pa po "Izbrisi" praka DELETE kon API. */
+    /** Prvo potvrda (AlertDialog), pa DELETE — zashtita od slucajno brisenje. */
     private void confirmAndDelete(Company company) {
         if (company == null || company.getId() == null) {
             return;
@@ -86,6 +96,11 @@ public class CompanyListFragment extends Fragment {
                 .show();
     }
 
+    /**
+     * DELETE /companies/:id asinrono.
+     * isAdded() — fragmentot moze da e unisten dodeka ide odgovorot (ne crash).
+     * Po uspeh: reloadCompanies() za da se osvezi i baza i UI (i geofences).
+     */
     private void performDelete(Company company) {
         Integer id = company.getId();
         if (id == null) {
@@ -99,6 +114,7 @@ public class CompanyListFragment extends Fragment {
                             public void onResponse(
                                     @NonNull Call<ResponseBody> call,
                                     @NonNull Response<ResponseBody> response) {
+                                // Fragmentot moze da ne e poveke attached — izlez
                                 if (!isAdded()) {
                                     return;
                                 }
@@ -110,6 +126,7 @@ public class CompanyListFragment extends Fragment {
                                                             company.getName()),
                                                     Toast.LENGTH_SHORT)
                                             .show();
+                                    // Osvezi ja celata lista (GET /companies povtorno)
                                     if (requireActivity() instanceof MainActivity) {
                                         ((MainActivity) requireActivity()).reloadCompanies();
                                     }

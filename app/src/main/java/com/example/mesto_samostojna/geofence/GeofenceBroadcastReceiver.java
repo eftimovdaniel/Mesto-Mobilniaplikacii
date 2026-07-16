@@ -11,8 +11,11 @@ import com.google.android.gms.location.Geofence;
 import com.google.android.gms.location.GeofencingEvent;
 
 /**
- * Geofence ENTER (&lt; 50 m): Toast (барање од задачата) + нотификација како резерва
- * за кога апликацијата е затворена.
+ * BroadcastReceiver za geofence ENTER (&lt; 50 m).
+ *
+ * ZOSO Receiver: se aktivira i koga app ne e vo foreground (OS go budi).
+ * KAKO RABOTI: GeofencingEvent → ENTER → Toast (zadaca) + ProximityNotifier
+ * (sistemska notifikacija; tap otvora CompanyDetailActivity).
  */
 public class GeofenceBroadcastReceiver extends BroadcastReceiver {
 
@@ -41,13 +44,13 @@ public class GeofenceBroadcastReceiver extends BroadcastReceiver {
             if (company == null) {
                 continue;
             }
-            // Toast — задачата бара да се прикаже Toast порака кога апликацијата е вклучена.
+            // Toast — zadacata bara Toast poraka (i koga app e vklucena).
             Toast.makeText(
                             context,
                             context.getString(R.string.proximity_near, company.getName()),
                             Toast.LENGTH_LONG)
                     .show();
-            // Нотификација — за случај кога UI-то не е во foreground.
+            // Notifikacija — rezerva koga UI ne e vo foreground.
             ProximityNotifier.showEnter(context, company);
         }
     }

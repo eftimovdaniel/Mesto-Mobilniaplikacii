@@ -19,16 +19,28 @@ import com.google.android.gms.location.LocationServices;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Регистрира geofence (50 m) околу секоја компанија од базата. */
+/**
+ * Upravuva so Google Play Services geofences.
+ *
+ * ZOSO geofence (ne samo FusedLocation): koga app e vo background,
+ * OS seuste moze da go izvesti receiver-ot pri vlez vo zonata.
+ *
+ * KAKO RABOTI:
+ * - Za sekoja kompanija registrira krug od 50 m.
+ * - Pri ENTER → GeofenceBroadcastReceiver (Toast + notifikacija).
+ * - syncGeofences: prvo remove stari, pa add novi (bez duplikati).
+ * - GeofenceCompanyStore cuva id→Company lokalno za ime vo notifikacijata.
+ */
 public final class GeofenceManager {
 
     private static final String TAG = "GeofenceManager";
-    /** Ист радиус како во задачата (под 50 m). */
+    /** Radius na geofence — ist kako vo baranjeto na zadacata (pod 50 m). */
     public static final float RADIUS_METERS = 50f;
     private static final long EXPIRATION_MS = Geofence.NEVER_EXPIRE;
 
     private GeofenceManager() {}
 
+    /** Dali imame barem fine ili coarse location permission. */
     public static boolean hasLocationPermission(Context context) {
         return ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
                         == PackageManager.PERMISSION_GRANTED
@@ -37,6 +49,11 @@ public final class GeofenceManager {
                         == PackageManager.PERMISSION_GRANTED;
     }
 
+    /**
+     * Brise stari geofences i registrira novi spored tekovnata lista.
+     * Zoshto prvo remove: da nema duplikati posle reload.
+     * Zacuva i vo GeofenceCompanyStore — receiver-ot treba ime/id pri ENTER.
+     */
     public static void syncGeofences(Context context, List<Company> companies) {
         if (!hasLocationPermission(context)) {
             return;
@@ -45,6 +62,7 @@ public final class GeofenceManager {
         GeofencingClient client = LocationServices.getGeofencingClient(context);
         PendingIntent pendingIntent = geofencePendingIntent(context);
 
+        // Prvo ostrani stari, pa dodaj novi (bez duplikati po reload)
         client.removeGeofences(pendingIntent)
                 .addOnCompleteListener(
                         task -> {
@@ -77,6 +95,12 @@ public final class GeofenceManager {
                         });
     }
 
+    /**
+     * Pretvora lista Company vo lista Geofence objekti (krug od 50 m sekoj).
+     * ZOSO se preskoknuvaat kompanii bez id: requestId mora da e unikaten za
+     * podocna da ja povrzeme notifikacijata so pravata kompanija.
+     * setTransitionTypes = ENTER samo — ne ni trebaat EXIT/DWELL nastani.
+     */
     private static List<Geofence> buildGeofences(List<Company> companies) {
         List<Geofence> list = new ArrayList<>();
         if (companies == null) {
@@ -98,6 +122,13 @@ public final class GeofenceManager {
         return list;
     }
 
+    /**
+     * PendingIntent sto OS go "pali" pri geofence nastan → GeofenceBroadcastReceiver.
+     *
+     * ZOSO FLAG_MUTABLE na Android 12+ (S): Play Services mora da vmetne detali
+     * za nastanot (koj geofence, ENTER/EXIT) vo Intent-ot — zatoa ne smee da e
+     * immutable. Na postari verzii se koristi IMMUTABLE (baranje na sistemot).
+     */
     private static PendingIntent geofencePendingIntent(Context context) {
         Intent intent = new Intent(context, GeofenceBroadcastReceiver.class);
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;

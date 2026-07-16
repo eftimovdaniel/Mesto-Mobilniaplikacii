@@ -10,11 +10,14 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 /**
- * Poceten ekran (brend mesto). Po ~2.4s ili dopir premina kon {@link MainActivity}.
+ * Poceten (splash) ekran so brendot "Mesto".
+ *
+ * ZOSO: kratok branding pred glavniot ekran.
+ * KAKO: tap ili ~2.4 s → MainActivity; flag "navigated" sprecuva dvojen otvor.
  */
 public class SplashActivity extends AppCompatActivity {
 
-    // Avtomatski premin kon glavniot ekran ako korisnikot ne dopre porano.
+    // Avtomatski premin ako korisnikot ne tapne porano.
     private static final long AUTO_NAVIGATE_MS = 2400L;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -40,10 +43,13 @@ public class SplashActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        // Otstrani go zakazaniot premin — inaku Handler-ot moze da drzi
+        // referenca kon unistena Activity (memory leak / crash).
         handler.removeCallbacks(navigateRunnable);
         super.onDestroy();
     }
 
+    /** Odi na MainActivity samo ednas (navigated flag = zastita od dvoen otvor). */
     private void goToMain() {
         if (navigated) {
             return;

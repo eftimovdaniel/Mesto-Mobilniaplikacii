@@ -15,7 +15,11 @@ import com.example.mesto_samostojna.CompanyDetailActivity;
 import com.example.mesto_samostojna.R;
 import com.example.mesto_samostojna.data.Company;
 
-/** Системска нотификација при влез во geofence околу компанија. */
+/**
+ * Sistemska notifikacija pri vlez vo geofence okolu kompanija.
+ * ZOSO: koga app e vo background, Toast moze da ne se vidi — notifikacijata e rezerva.
+ * Tap na notifikacija → CompanyDetailActivity za taa kompanija.
+ */
 public final class ProximityNotifier {
 
     private static final String CHANNEL_ID = "mesto_proximity";
@@ -23,6 +27,11 @@ public final class ProximityNotifier {
 
     private ProximityNotifier() {}
 
+    /**
+     * Kreira Notification Channel (zadolzitelno od Android 8/Oreo navamu).
+     * ZOSO: bez kanal, notifikaciite ednostavno ne se prikazuvaat na 8.0+.
+     * Bezbedno e da se povika povekjepati — sistemot go ignorira ako veke postoi.
+     */
     public static void ensureChannel(Context context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return;
@@ -39,6 +48,15 @@ public final class ProximityNotifier {
         }
     }
 
+    /**
+     * Prikazuva notifikacija "blizu si do {kompanija}", so tap sto vodi kon
+     * detalen ekran za taa kompanija.
+     *
+     * ZOSO proverka na POST_NOTIFICATIONS (Android 13+): bez taa dozvola
+     * notify() e tivko ignoriran — proverkata sprecuva bezmisleni obidi.
+     * ZOSO unikaten notifId po kompanija: dve razlicni kompanii da dadat dve
+     * oddelni notifikacii (ne da se prepišuvaat).
+     */
     public static void showEnter(Context context, Company company) {
         ensureChannel(context);
 
@@ -49,6 +67,8 @@ public final class ProximityNotifier {
             return;
         }
 
+        // Intent sto se otvora pri tap: nosi ja celata Company (Serializable).
+        // NEW_TASK + CLEAR_TOP — se otvora korektno i koga app ne e vo foreground.
         Intent open =
                 new Intent(context, CompanyDetailActivity.class)
                         .putExtra(CompanyDetailActivity.EXTRA_COMPANY, company)
